@@ -1,10 +1,10 @@
 # smarties
 
-Smarties is a general purpose (behavior tree)[https://en.wikipedia.org/wiki/Behavior_tree_(artificial_intelligence,_robotics_and_control)] library written in Haskell. Smarties supports utility computation functions within the trees for advanced decision making. Smarties implements many of the design patterns outlined in this (paper)[https://course.ccs.neu.edu/cs5150f13/readings/dill_designpatterns.pdf] and probably some that aren't.
+Smarties is a general purpose [behavior tree](https://en.wikipedia.org/wiki/Behavior_tree_(artificial_intelligence,_robotics_and_control)) library written in Haskell. Smarties supports utility computation functions within the trees for advanced decision making. Smarties implements many of the design patterns outlined in this [paper](https://course.ccs.neu.edu/cs5150f13/readings/dill_designpatterns.pdf) and probably some that aren't.
 
 Smarties comes in 2 parts. The core library containing all the tree logic and a special State Monad that enables a DSL for writing compile-time behavior trees in an intuitive way. The core library provides basic control and utility nodes and the user implements their own *condition*, *action*, *utility* and *perception* nodes that operates on their own data type.
 
-_This library is still in alpha. The high level concepts of the library are more or less finalized. The next version will be on hackage and will include several major interface changes that should greatly improve useability. Please see (Future Development)[#missing] for more details_
+_This library is still in alpha and actively being developed. The next version will be on hackage and will include several major API changes that should greatly improve useability. Please see [Future Development](#missing) for more details_
 
 ## Example
 ```haskell
@@ -114,7 +114,8 @@ utilityNormalness = addUtility . UtilityNormalness
 
 Here are some convenience wrappers to improve the syntax of the tree. These convert *SmNode* types to their respective *SmTreeBuilder* computations. These won't be necessary in v2.0 of the library.
 
-```haskelltree = utilityWeightedSelector $ do
+```haskell
+tree = utilityWeightedSelector $ do
 	sequence $ do
 		utilityMultiply $ do
 			utilityConst 0.1
