@@ -1,0 +1,69 @@
+{-# LANGUAGE DataKinds     #-}
+
+
+module Smarties.NewNode () where
+
+import qualified Smarties.Base as S
+import           GHC.TypeLits        
+
+
+class Listable a x where
+	toList :: a x -> [x]
+
+instance (x~x') => Listable (x,x) x' where
+	toList (x1,x2) = [x1,x2]
+
+instance (x~x') => Listable (x,x,x) x' where
+	toList (x1,x2,x3) = [x1,x2,x3]
+
+data Unbounded
+data 
+
+class NodeClass n nc util p o where
+	toNode :: n -> Node nc util p o
+
+data Node (nc :: Nat) (util :: S.Utility) p o = Node {
+	update :: S.TreeState p -> (S.TreeStatus, S.TreeState p, [o]),
+    utility :: S.TreeState p -> (S.Utility, S.TreeState p)
+}
+
+instance NodeClass Node where
+	toNode = id
+
+data Not p o where
+	Not :: (NodeClass n _ _ p o) => n -> Not 1 U_FAIL p o
+
+instance (p~p', o~o1) => NodeClass (Not p o) 1 U_FAIL p' o' where
+	toNode (Not n) = Node update' utility' where
+		update' = undefined
+		utility' = undefined
+
+
+class Condition n where
+	condition :: n p o -> S.TreeState p -> S.TreeStatus
+
+
+
+
+
+
+
+
+
+
+
+
+
+newtype WrapCondition p o = WrapCondition { unwrapCondition :: n x y g o}
+
+instance (Condition n) => NodeClass (WrapCondition n) where
+	toNode n = Node 
+		update'
+	    (\ s -> case update' s of
+	        (S.SUCCESS, nexty, _) -> (S.U_PASS, nexty)
+	        (_, nexty, _)       -> (S.U_FAIL, nexty))
+	    where 
+			update' = (\ s -> ((condition (unwrapCondition n) s), s, []))
+			
+
+
