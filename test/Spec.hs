@@ -77,7 +77,7 @@ prop_basicHardcodedTest1 =
                     add basicSuccess
                     add basicSuccess
                     add basicFail
-        (rslt, _) = tickTree (getTree testTree) ()
+        (rslt, _, _) = tickTree (getTree testTree) ()
     in 
         rslt == FAIL
 
@@ -102,14 +102,14 @@ prop_basicHardcodedTest2 =
                 sequence $ do
                     utilityConst 0.2
                     rSuccess
-        (rslt, _) = tickTree (getTree testTree) ()
+        (rslt, _, _) = tickTree (getTree testTree) ()
     in 
         rslt == SUCCESS
 
 prop_autoTest :: Tree -> Bool
 prop_autoTest t = (rslt == SUCCESS) == checkTree t where
     testTree = getTree (buildTree t)
-    rslt = fst $ tickTree testTree ()
+    rslt = (\(x,_,_) -> x) $ tickTree testTree ()
     buildTree :: Tree -> SmTreeBuilder () () ()
     buildTree (Leaf x) = if x then add basicSuccess else add basicFail
     buildTree (Branch b xs) = case b of

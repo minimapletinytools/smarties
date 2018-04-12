@@ -115,6 +115,6 @@ instance (SmUtility n p, TreeState p) => SmNode (WrapSmUtility n) p o where
     update n p = (SUCCESS, p, [])
     
 
-tickTree :: (TreeState p) => SmNodeWrapper p o -> p -> (TreeStatus, [o])
-tickTree n ins = (rslt, outAction)
-    where (rslt, _, outAction) = update n ins
+tickTree :: (TreeState p) => SmNodeWrapper p o -> p -> (TreeStatus, p, [o])
+tickTree n p = (rslt, nextp, outAction)
+    where (rslt, nextp, outAction) = update n p

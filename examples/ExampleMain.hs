@@ -9,16 +9,18 @@ import System.Random
 import Control.Monad.Random hiding (sequence)
 import Smarties
 import Prelude hiding (sequence)
+import Data.List (mapAccumL)
 
 
-data Pronoun = HeHim | SheHer | TheyThem | FooBar | Other | Undecided deriving (Eq)
+
+data Pronoun = HeHim | SheHer | TheyThem | FooBar | Other | Undecided deriving (Eq, Show)
 
 data Student = Student {
     assignedPronoun :: Pronoun,
     preferredPronoun :: Pronoun,
     openlyChange :: Bool,
     jeans :: Int
-}
+} deriving (Show)
 
 assignedPronounIs :: Pronoun -> Student -> Bool
 assignedPronounIs p s = preferredPronoun s == p
@@ -105,7 +107,7 @@ utilityProperty = addUtility . UtilityProperty
 utilityNormalness = addUtility . UtilityNormalness
 
 
-tree = utilityWeightedSelector $ do
+studentTree = utilityWeightedSelector $ do
 	sequence $ do
 		utilityMultiply $ do
 			utilityConst 0.1
@@ -159,10 +161,18 @@ makeStudent = do
         
 main :: IO ()
 main = do
+	stdgen <- getStdGen
+	students <- replicateM 100 $ evalRandIO makeStudent
 	let
-		numStudents = 100
-	students <- replicateM numStudents $ evalRandIO makeStudent
-	let
-		startState = BasicTreeState (students, students !! 0) (mkStdGen 0)
-	putStrLn "running"
-	putStrLn . show . fst $ tickTree (getTree tree) startState
+		tree = getTree studentTree
+		studentfn g s = (g', (foldl1 (.) o) s) where
+			(rslt, (BasicTreeState _ g'), o) = tickTree tree $ BasicTreeState (students, s) g
+		ticktStudents sts = snd $ mapAccumL studentfn stdgen sts
+		loop 0 sts = return ()
+		loop n sts = do 
+			let
+				nextsts = ticktStudents sts
+			putStrLn . show $ nextsts
+			loop (n-1) nextsts
+	loop 365 students
+

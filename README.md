@@ -185,13 +185,20 @@ makeStudent = do
         
 main :: IO ()
 main = do
+	stdgen <- getStdGen
+	students <- replicateM 100 $ evalRandIO makeStudent
 	let
-		numStudents = 100
-	students <- replicateM numStudents $ evalRandIO makeStudent
-	let
-		startState = BasicTreeState (students, students !! 0) (mkStdGen 0)
-	putStrLn "running"
-	putStrLn . show . fst $ tickTree (getTree tree) startState
+		tree = getTree studentTree
+		studentfn g s = (g', (foldl1 (.) o) s) where
+			(rslt, (BasicTreeState _ g'), o) = tickTree tree $ BasicTreeState (students, s) g
+		ticktStudents sts = snd $ mapAccumL studentfn stdgen sts
+		loop 0 sts = return ()
+		loop n sts = do 
+			let
+				nextsts = ticktStudents sts
+			putStrLn . show $ nextsts
+			loop (n-1) nextsts
+	loop 365 students
 ```
 
 Finally, we run the tree and output the results :D. 
