@@ -24,6 +24,8 @@ import Data.List (mapAccumL, maximumBy, sortOn, find)
 import Data.Maybe (Maybe(..), fromJust  )
 
 
+import Debug.Trace
+
 -- | Selector
 data Selector p o where
     Selector :: (TreeState p) => [SmNodeWrapper p o] -> Selector p o
@@ -104,11 +106,11 @@ utilities' ns p = filter ((\case {Utility f -> True; _ -> False}) . fst) $ utils
     fn acc n = (nextp, (u, n)) where
         (u, nextp) = utility n p
 
+
 weightedRandomSelection :: (RandomGen g, Random a, Num a, Ord a) => g -> [(a, n)] -> Maybe (n, g)
 weightedRandomSelection g ns = (,g') . snd <$> find (\(x,_) -> x >= rng) ordered where
     (rng, g') = randomR (0,total) g
-    ordered = sortOn fst ns
-    total = foldl (\acc x -> acc + fst x) 0 ns
+    (total, ordered) = mapAccumL (\acc x -> (acc + fst x, (acc + fst x, snd x))) 0 ns
 
 -- | UtilitySelector
 data UtilitySelector p o where

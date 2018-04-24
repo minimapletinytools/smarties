@@ -165,7 +165,7 @@ main = do
 	students <- replicateM 100 $ evalRandIO makeStudent
 	let
 		tree = getTree studentTree
-		studentfn g s = (g', (foldl1 (.) o) s) where
+		studentfn g s = (g', (foldl (.) id o) s) where
 			(rslt, (BasicTreeState _ g'), o) = tickTree tree $ BasicTreeState (students, s) g
 		ticktStudents sts = snd $ mapAccumL studentfn stdgen sts
 		loop 0 sts = return ()
