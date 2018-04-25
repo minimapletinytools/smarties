@@ -14,6 +14,8 @@ module Smarties2.Builders (
     Condition(..),
     fromUtility,
     fromPerception,
+    fromCondition,
+    fromAction
 ) where
 
 import           Smarties2.Base
@@ -21,26 +23,57 @@ import           Smarties2.Base
 
 -- $helper1link
 -- helpers for building NodeSequence out of functions
-data Utility g p = Utility (g -> p -> (Float, g))
+data Utility g p a where
+    Utility :: (Num a, Ord a) => (g -> p -> (a, g)) -> Utility g p a
+    SimpleUtility :: (Num a, Ord a) => (p -> a) -> Utility g p a
 
-data Perception g p = Perception (g -> p -> (g, p))
--- do GADT with multiple constructors
--- SimplePerception :: (p -> p) -> Perception g p
--- Perception :: (g -> p -> (g, p)) -> Perception g p
--- ConditionalPerception :: (g -> p -> (Bool, g, p)) -> Perception g p
 
-data Action g p o = Action (g -> p -> (g, o))
+data Perception g p where
+    Perception :: (g -> p -> (g, p)) -> Perception g p
+    SimplePerception :: (p -> p) -> Perception g p
+    ConditionalPerception :: (g -> p -> (Bool, g, p)) -> Perception g p
 
-data Condition g p o = Condition (g -> p -> (Bool, g))
+data Action g p o where
+    Action :: (g -> p -> (g, o)) -> Action g p o
+    SimpleAction :: (p -> o) -> Action g p o
 
-fromUtility ::  Utility g p -> NodeSequence g p o Float
-fromUtility (Utility n) = NodeSequence func where
-    func g p = (u, g', p, SUCCESS, []) where
-        (u, g') = n g p
+data Condition g p where
+    Condition :: (g -> p -> (Bool, g)) -> Condition g p 
+    SimpleCondition :: (p -> Bool) -> Condition g p 
+
+fromUtility :: Utility g p a -> NodeSequence g p o a
+fromUtility n = NodeSequence $ case n of 
+    Utility f -> func f
+    SimpleUtility f -> func (\g p -> (f p, g))
+    where
+        func f g p = (a, g', p, SUCCESS, []) where
+            (a, g') = f g p
 
 fromPerception :: Perception g p -> NodeSequence g p o ()
-fromPerception (Perception n) = NodeSequence func where
-    func g p = ((), g', p', SUCCESS, []) where
-        (g', p') = n g p
+fromPerception n = NodeSequence $ case n of 
+    Perception f -> func f
+    SimplePerception f -> func (\g p -> (g, f p))
+    ConditionalPerception f -> cfunc f
+    where  
+        func f g p = ((), g', p', SUCCESS, []) where
+            (g', p') = f g p
+        cfunc f g p = ((), g', p', if b then SUCCESS else FAIL, []) where
+            (b, g', p') = f g p
+
+fromCondition :: Condition g p -> NodeSequence g p o ()
+fromCondition n = NodeSequence $ case n of 
+    Condition f -> func f
+    SimpleCondition f -> func (\g p -> (f p, g))
+    where  
+        func f g p = ((), g', p, if b then SUCCESS else FAIL, []) where
+            (b, g') = f g p
+
+fromAction :: Action g p o -> NodeSequence g p o ()
+fromAction n = NodeSequence $ case n of 
+    Action f -> func f
+    SimpleAction f -> func (\g p -> (g, f p))
+    where
+        func f g p = ((), g', p, SUCCESS, [o]) where
+            (g', o) = f g p
 
 
