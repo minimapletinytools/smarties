@@ -98,13 +98,13 @@ getGenerator = NodeSequence $ (\g p -> (g, g, p, SUCCESS, []))
 setGenerator :: (RandomGen g) => g -> NodeSequence g p o ()
 setGenerator g = NodeSequence $ (\_ p -> ((), g, p, SUCCESS, []))
 
-makeSequence :: (RandomGen g, TreeState p) => NodeSequence g p o a -> NodeSequence g p o a 
+makeSequence :: (TreeState p) => NodeSequence g p o a -> NodeSequence g p o a 
 makeSequence ns = NodeSequence func where
 		func g p = over _3 stackPop $ (runNodes ns) g (stackPush p)
 
-selector :: [NodeSequence g p o a] -> NodeSequence g p o a
+selector :: (TreeState p) => [NodeSequence g p o a] -> NodeSequence g p o a
 selector ns = NodeSequence func where 
-	func g p = (runNodes selectedNode) g p where
+	func g p = over _3 stackPop $ (runNodes selectedNode) g (stackPush p) where
 		selectedNode = fromMaybe empty $ find (\(NodeSequence n) -> (\case (_,_,_,x,_)-> x == SUCCESS) $ n g p) ns
 
 {-
