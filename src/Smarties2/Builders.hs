@@ -23,20 +23,24 @@ import           Smarties2.Base
 
 -- $helper1link
 -- helpers for building NodeSequence out of functions
+
+-- | Utility return utility only
 data Utility g p a where
     Utility :: (Num a, Ord a) => (g -> p -> (a, g)) -> Utility g p a
     SimpleUtility :: (Num a, Ord a) => (p -> a) -> Utility g p a
 
-
+-- | Perception modify pereption only
 data Perception g p where
     Perception :: (g -> p -> (g, p)) -> Perception g p
     SimplePerception :: (p -> p) -> Perception g p
     ConditionalPerception :: (g -> p -> (Bool, g, p)) -> Perception g p
 
+-- | Actions create output and always have status SUCCESS
 data Action g p o where
     Action :: (g -> p -> (g, o)) -> Action g p o
     SimpleAction :: (p -> o) -> Action g p o
 
+-- | Conditions have status SUCCESS if they return true FAIL otherwise
 data Condition g p where
     Condition :: (g -> p -> (Bool, g)) -> Condition g p 
     SimpleCondition :: (p -> Bool) -> Condition g p 

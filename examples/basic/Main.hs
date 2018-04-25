@@ -1,4 +1,4 @@
---{-# LANGUAGE TypeSynonymInstances           #-}
+{-# LANGUAGE TypeSynonymInstances           #-}
 
 module Main where
 
@@ -8,9 +8,6 @@ import System.Random
 import Control.Monad.Random hiding (sequence)
 import Prelude hiding (sequence)
 import Data.List (mapAccumL)
-
-{-
-
 
 data Pronoun = HeHim | SheHer | TheyThem | FooBar | Other | Undecided deriving (Eq, Show)
 
@@ -55,126 +52,87 @@ indecisiveness = fst . randomR (0.0,100.0) . mkStdGen . (+5) . jeans
 -- for the purpose of this demo, this is determined by the kind of jeans a student wears. This is not true IRL.
 dogmaticBeliefInBinaryBiologicalDeterminism :: Student -> Bool
 dogmaticBeliefInBinaryBiologicalDeterminism s = b s && not (chromeNeither s) where
-	b = (>99) . fst . randomR ((0,100)::(Int,Int)) . mkStdGen . (+2) . jeans
+    b = (>99) . fst . randomR ((0,100)::(Int,Int)) . mkStdGen . (+2) . jeans
 
 toZeroOne :: Bool -> Float
 toZeroOne x = if x then 1.0 else 0.0
 
 type School = [Student]
-type SchoolTreeState = BasicTreeState (School, Student) StdGen
+type SchoolTreeState = (School, Student)
+instance TreeState SchoolTreeState 
 type ActionType = (Student -> Student)
 
-data ActionChangePronoun = ActionChangePronoun Pronoun
-instance SmAction ActionChangePronoun SchoolTreeState ActionType where
-    action (ActionChangePronoun p) _ = (SUCCESS, (\(Student a _ c d) -> Student a p c d))
+actionChangePronoun p = fromAction $ 
+    SimpleAction (\(sc, st) -> (\(Student a _ c d) -> Student a p c d))
 
-data ActionChangeBack = ActionChangeBack
-instance SmAction ActionChangeBack SchoolTreeState ActionType where
-    action _ _ = (SUCCESS, (\(Student a _ c d) -> Student a a c d))
+actionChangeBack = fromAction $
+    SimpleAction (\(sc, st) -> (\(Student a _ c d) -> Student a a c d))
 
-data ConditionHasProperty = ConditionHasProperty (Student -> Bool)
-instance SmCondition ConditionHasProperty SchoolTreeState where
-    condition (ConditionHasProperty f) (BasicTreeState (_,s) _) = if f s then SUCCESS else FAIL
+conditionHasProperty f = fromCondition $
+    SimpleCondition (\(_, st) -> f st)
 
--- probably promote this to ConditionRand in Node.hs
-data ConditionRandomChance = ConditionRandomChance Float
-instance SmCondition ConditionRandomChance SchoolTreeState where
-    condition (ConditionRandomChance r) (BasicTreeState _ g) = if rn < r then SUCCESS else FAIL
-        where (rn, nextg) = randomR (0.0, 1.0) g
+utilityProperty f = fromUtility $
+    SimpleUtility (\(_, st) -> f st)
 
-data UtilityProperty = UtilityProperty (Student -> Float)
-instance SmUtility UtilityProperty SchoolTreeState where
-    utilityOnly (UtilityProperty f) (BasicTreeState (_,s) _) = f s
+utilityNormalness f = fromUtility $
+    SimpleUtility (\(sc, _) -> (sum . map f $ sc) / (fromIntegral $ length sc))
 
-data UtilityNormalness = UtilityNormalness (Student -> Float)
-instance SmUtility UtilityNormalness SchoolTreeState where
-    utilityOnly (UtilityNormalness f) (BasicTreeState (s,_) _) = (sum . map f $ s) / (fromIntegral $ length s)
-
-actionChangePronoun :: Pronoun -> SmTreeBuilder SchoolTreeState ActionType ()
-actionChangePronoun = addAction . ActionChangePronoun    
-
-actionChangeBack :: SmTreeBuilder SchoolTreeState ActionType ()
-actionChangeBack = addAction ActionChangeBack
-
-conditionHasProperty :: (Student -> Bool) -> SmTreeBuilder SchoolTreeState ActionType ()
-conditionHasProperty = addCondition . ConditionHasProperty
-
-conditionRandomChance :: Float -> SmTreeBuilder SchoolTreeState ActionType ()
-conditionRandomChance = addCondition . ConditionRandomChance
-
-utilityProperty = addUtility . UtilityProperty
-utilityNormalness = addUtility . UtilityNormalness
-
-
-studentTree = utilityWeightedSelector $ do
-	sequence $ do
-		utilityMultiply $ do
-			utilityConst 0.1
-			utilityNormalness (toZeroOne . openlyChange)
-			utilityProperty feminimity
-		actionChangePronoun SheHer
-	sequence $ do
-		utilityMultiply $ do
-			utilityConst 0.1
-			utilityNormalness (toZeroOne . openlyChange)
-			utilityProperty masculinity
-		actionChangePronoun HeHim
-	sequence $ do
-		utilityMultiply $ do
-			utilityConst 0.1
-			utilityNormalness (toZeroOne . openlyChange)
-			utilityProperty developer
-		actionChangePronoun FooBar
-	sequence $ do
-		utilityMultiply $ do
-			utilityConst 0.1
-			utilityNormalness (toZeroOne . openlyChange)
-			utilityProperty noneOfTheAbove
-		actionChangePronoun Other
-	sequence $ do
-		utilityMultiply $ do
-			utilityConst 0.1
-			utilityNormalness (toZeroOne . openlyChange)
-			utilityAverage $ do
-				utilityOneMinus $ do utilityProperty masculinity
-				utilityOneMinus $ do utilityProperty feminimity
-		actionChangePronoun TheyThem
-	sequence $ do
-		utilityMultiply $ do
-			utilityConst 0.1
-			utilityProperty indecisiveness
-		actionChangeBack
-	sequence $ do
-		utilityNormalness ((1-) . toZeroOne . openlyChange)
-		-- it's nice to explicitly indicate an intended noop
-		-- this line of code is not needed, but all choices should be celebrated
-		rSuccess 
+studentTree = utilityWeightedSelector 
+    [sequence $ do
+        a <- utilityNormalness (toZeroOne . openlyChange)
+        b <- utilityProperty feminimity
+        actionChangePronoun SheHer
+        return $ a * b * 0.1
+    ,sequence $ do
+        a <- utilityNormalness (toZeroOne . openlyChange)
+        b <- utilityProperty masculinity
+        actionChangePronoun HeHim
+        return $ a * b
+    ,sequence $ do
+        a <- utilityNormalness (toZeroOne . openlyChange)
+        b <- utilityProperty developer
+        actionChangePronoun FooBar
+        return $ a * b * 0.1
+    ,sequence $ do
+        a <- utilityNormalness (toZeroOne . openlyChange)
+        b <- utilityProperty noneOfTheAbove
+        actionChangePronoun Other
+        return $ a * b * 0.1
+    ,sequence $ do
+        a <- utilityNormalness (toZeroOne . openlyChange)
+        m <- utilityProperty masculinity
+        f <- utilityProperty feminimity
+        actionChangePronoun TheyThem
+        return $ a * ((1.0-m)+(1.0-f)) / 2.0
+    ,sequence $ do
+        a <- utilityProperty indecisiveness
+        actionChangeBack
+        return $ 0.1 * a
+    ,sequence $ do
+        result SUCCESS 
+        utilityNormalness ((1-) . toZeroOne . openlyChange)
+    ]
 
 makeStudent :: (RandomGen g) => Rand g Student
 makeStudent = do
-	(isFemale::Bool) <- getRandom 
-	(sJeans::Int) <- getRandom
-	let 
-		pronoun = if isFemale then SheHer else HeHim
-	return $ Student pronoun pronoun False sJeans
+    (isFemale::Bool) <- getRandom 
+    (sJeans::Int) <- getRandom
+    let 
+        pronoun = if isFemale then SheHer else HeHim
+    return $ Student pronoun pronoun False sJeans
         
 main :: IO ()
 main = do
-	stdgen <- getStdGen
-	students <- replicateM 100 $ evalRandIO makeStudent
-	let
-		tree = getTree studentTree
-		studentfn g s = (g', (foldl (.) id o) s) where
-			(rslt, (BasicTreeState _ g'), o) = tickTree tree $ BasicTreeState (students, s) g
-		ticktStudents sts = snd $ mapAccumL studentfn stdgen sts
-		loop 0 sts = return ()
-		loop n sts = do 
-			let
-				nextsts = ticktStudents sts
-			putStrLn . show $ nextsts
-			loop (n-1) nextsts
-	loop 365 students
-
--}
-
-main = undefined
+    stdgen <- getStdGen
+    students <- replicateM 100 $ evalRandIO makeStudent
+    let
+        studentfn g s = (g', (foldl (.) id os) s) where
+            (g', _, _, os) = runNodeSequence studentTree g (students, s)
+        ticktStudents sts = snd $ mapAccumL studentfn stdgen sts
+        loop 0 sts = return ()
+        loop n sts = do 
+            let
+                nextsts = ticktStudents sts
+            putStrLn . show $ nextsts
+            loop (n-1) nextsts
+    loop 365 students

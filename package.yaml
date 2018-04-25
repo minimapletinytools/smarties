@@ -42,6 +42,7 @@ default-extensions:
 - GADTs
 - TupleSections
 - ScopedTypeVariables
+- FlexibleInstances
 
 library:
   source-dirs: src

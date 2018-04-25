@@ -12,6 +12,7 @@ module Smarties2.Nodes (
     selector,
     weightedSelector,
     utilitySelector,
+    utilityWeightedSelector,
 
     -- $decoratorlink
     flipResult,
@@ -33,7 +34,7 @@ import           Control.Applicative.Alternative
 import           Control.Lens
 import           Control.Monad.Random            hiding (sequence)
 
-import           Data.List                       (find, maximumBy)
+import           Data.List                       (find, maximumBy, mapAccumL)
 import           Data.Maybe                      (fromMaybe)
 import           Data.Ord                        (comparing)
 
@@ -44,18 +45,25 @@ import           Data.Ord                        (comparing)
 -- | this is same as "do" except scopes the perception
 sequence :: (TreeState p) => NodeSequence g p o a -> NodeSequence g p o a
 sequence ns = NodeSequence func where
-        func g p = over _3 stackPop $ (runNodes ns) g (stackPush p)
+    func g p = over _3 stackPop $ (runNodes ns) g (stackPush p)
+
+
 
 -- |
 -- TODO replace with mapAccumL because need to accumulate p and g
 -- you can think of selector as something along the lines of (dropWhile SUCCESS . take 1)
 selector :: (TreeState p) => [NodeSequence g p o a] -> NodeSequence g p o a
 selector ns = NodeSequence func where
-    func g p = over _3 stackPop $ (runNodes selectedNode) g (stackPush p) where
-        selectedNode = fromMaybe empty $ find (\(NodeSequence n) -> (\case (_,_,_,x,_)-> x == SUCCESS) $ n g p) ns
+    func g p = selected where
+        (g',rslts) = mapAccumL mapAccumFn g ns
+        mapAccumFn acc x = (acc', r) where
+            r = (runNodes x) acc (stackPush p)
+            (_,acc',_,_,_) = r
+        selected = fromMaybe (error "selector: all children failed",g',p,FAIL,[])  $ do
+            n <- find (\(_,_,_,x,_)-> x == SUCCESS) rslts
+            return $ over _3 stackPop n
 
 -- |
--- TODO replace with mapAccumL because need to accumulate p and g
 weightedSelection :: (RandomGen g, Ord w, Random w, Num w) => g -> [(w,a)] -> (Maybe a, g)
 weightedSelection g ns = r where
     zero = fromInteger 0
@@ -66,7 +74,6 @@ weightedSelection g ns = r where
         Nothing    -> (Nothing, g')
 
 -- |
--- TODO replace with mapAccumL because need to accumulate p and g
 weightedSelector :: (RandomGen g, TreeState p, Ord w, Num w, Random w) => [(w, NodeSequence g p o a)] -> NodeSequence g p o a
 weightedSelector ns = NodeSequence func where
     func g p = over _3 stackPop $ (runNodes selectedNode) g' (stackPush p) where
@@ -74,12 +81,31 @@ weightedSelector ns = NodeSequence func where
         selectedNode = fromMaybe empty msn
 
 -- |
--- TODO replace with mapAccumL because need to accumulate p and g
 utilitySelector :: (TreeState p, Ord a) => [NodeSequence g p o a] -> NodeSequence g p o a
 utilitySelector ns = NodeSequence func where
-    func g p = over _3 stackPop $ (runNodes selectedNode) g (stackPush p) where
-        compfn n = (\(a,_,_,_,_)->a) $ (runNodes n) g p
-        selectedNode = if length ns == 0 then empty else maximumBy (comparing compfn) ns
+    func g p = selected where
+        (g',rslts) = mapAccumL mapAccumFn g ns
+        mapAccumFn acc x = (acc', r) where
+            r = (runNodes x) acc (stackPush p)
+            (_,acc',_,_,_) = r
+        compfn = (\(a,_,_,_,_)->a)
+        selected = if length ns == 0 
+            then (error "utilitySelector: no children",g',p,FAIL,[]) 
+            else maximumBy (comparing compfn) rslts
+
+-- |
+utilityWeightedSelector :: (RandomGen g, TreeState p, Random a, Num a, Ord a) => [NodeSequence g p o a] -> NodeSequence g p o a
+utilityWeightedSelector ns = NodeSequence func where
+    func g p = selected where
+        (g',rslts) = mapAccumL mapAccumFn g ns
+        mapAccumFn acc x = (acc', r) where
+            r = (runNodes x) acc (stackPush p)
+            (_,acc',_,_,_) = r
+        compfn = (\(a,_,_,_,_)->a)
+        (selected', g'') = weightedSelection g' $ map (\x-> (compfn x,x)) rslts
+        selected = fromMaybe (error "utilitySelector: no children",g'',p,FAIL,[]) $ do
+            n <- selected'
+            return $ set _2 g'' n
 
 -- $decoratorlink
 -- decorators run a nodesequence and do something with it's results

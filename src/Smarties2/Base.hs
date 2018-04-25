@@ -12,6 +12,7 @@ Stability   : experimental
 module Smarties2.Base (
 	Status(..),
 	NodeSequence(..),
+	runNodeSequence,
 	getPerception,
 	getGenerator,
 	setGenerator
@@ -35,6 +36,9 @@ data Status = SUCCESS | FAIL deriving (Eq, Show)
 -- |
 -- TODO add a (scope :: Bool) input parameter
 data NodeSequence g p o a =  NodeSequence { runNodes :: g -> p -> (a, g, p, Status, [o]) }
+
+runNodeSequence :: NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
+runNodeSequence n g p = (\(_,g,p,s,os)->(g,p,s,os)) $ (runNodes n) g p
 
 -- $helperlink
 -- helpers for building NodeSequence in Monad land
@@ -98,7 +102,6 @@ instance (RandomGen g) => MonadRandom (NodeSequence g p o) where
     		(a, g') = random g
     	setGenerator g'
     	return a    
-
     getRandomR r = do
     	g <- getGenerator
     	let 
