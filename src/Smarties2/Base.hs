@@ -1,6 +1,21 @@
-{-# LANGUAGE ApplicativeDo #-}
-{-# RankNTypes #-}
+{-|
+Module      : Base
+Description : Functions and types pertaining to DNA and Genes
+Copyright   : (c) Peter Lu, 2018
+License     : GPL-3
+Maintainer  : chippermonky@email.com
+Stability   : experimental
+-}
+
+--{-# LANGUAGE ApplicativeDo #-}
+--{-# RankNTypes #-}
 module Smarties2.Base (
+	Status(..),
+	NodeSequence(..),
+	getPerception,
+	getGenerator,
+	setGenerator
+	-- $helperlink
 ) where	
 
 import Smarties2.TreeState
@@ -8,10 +23,6 @@ import Smarties2.TreeState
 import Control.Lens
 import Control.Monad.Random
 import Control.Applicative.Alternative
-
-import Data.Maybe (fromMaybe)
-import Data.List (find, maximumBy)
-import Data.Ord (comparing)
 
 
 
@@ -21,26 +32,28 @@ import Data.Ord (comparing)
 
 data Status = SUCCESS | FAIL deriving (Eq, Show)
 
-data UtilityNode g p o = UtilityNode {
-	utility :: g -> p -> (Float, g)
-}
-
-data PerceptionNode g p o = PerceptionNode {
-	perception :: g -> p -> (g, p)
-}
-
-data ActionNode g p o = ActionNode {
-	action :: g -> p -> (g, o)	
-}
-
-makeUtility ::  UtilityNode g p o -> NodeSequence g p o Float
-makeUtility (UtilityNode n) = NodeSequence fun where
-	fun g p = (u, g', p, SUCCESS, []) where
-		(u, g') = n g p
-
 -- |
 -- TODO add a (scope :: Bool) input parameter
 data NodeSequence g p o a =  NodeSequence { runNodes :: g -> p -> (a, g, p, Status, [o]) }
+
+-- $helperlink
+-- helpers for building NodeSequence in Monad land
+
+-- | returns the perception state
+getPerception :: NodeSequence g p o p
+getPerception = NodeSequence $ (\g p -> (p, g, p, SUCCESS, []))
+
+-- | returns the generator 
+getGenerator ::  NodeSequence g p o g
+getGenerator = NodeSequence $ (\g p -> (g, g, p, SUCCESS, []))
+
+-- | set the generator in the monad
+setGenerator :: (RandomGen g) => g -> NodeSequence g p o ()
+setGenerator g = NodeSequence $ (\_ p -> ((), g, p, SUCCESS, []))
+
+
+-- instance declarations for NodeSequence
+-- helpers for building NodeSequence in Monad land
 
 instance  Functor (NodeSequence g p o) where
 	fmap f n = do 
@@ -74,86 +87,27 @@ instance  Monad (NodeSequence g p o) where
 			(a, g', p', s, os) = n g p -- run original node, assume it succeded
 			NodeSequence n' = f a -- generate the next node
 			keepGoing = over _5 (++os) (n' g' p') -- run the next node
-			(b,_,_,_,_) = keepGoing
-			
-	
+			(b,_,_,_,_) = keepGoing	
 
 instance (RandomGen g) => MonadRandom (NodeSequence g p o) where
+	--getRandoms = iterate getRandom
+    --getRandomRs r = iterate (getRandomR r)
     getRandom = do
     	g <- getGenerator
-    	let (a, g') = random g
+    	let 
+    		(a, g') = random g
     	setGenerator g'
     	return a    
+
     getRandomR r = do
     	g <- getGenerator
-    	let (a, g') = randomR r g
+    	let 
+    		(a, g') = randomR r g
     	setGenerator g'
     	return a
-	--getRandoms = getGenerator >>= iterate getRandom
-    --getRandomRs r = getGenerator >>= iterate (getRandomR r)
+
+
     
-
--- | NodeSequence builder helper 
-getState ::   NodeSequence g p o p
-getState = NodeSequence $ (\g p -> (p, g, p, SUCCESS, []))
-
--- | NodeSequence builder helper 
-getGenerator ::  NodeSequence g p o g
-getGenerator = NodeSequence $ (\g p -> (g, g, p, SUCCESS, []))
-
-setGenerator :: (RandomGen g) => g -> NodeSequence g p o ()
-setGenerator g = NodeSequence $ (\_ p -> ((), g, p, SUCCESS, []))
-
-sequence :: (TreeState p) => NodeSequence g p o a -> NodeSequence g p o a 
-sequence ns = NodeSequence func where
-		func g p = over _3 stackPop $ (runNodes ns) g (stackPush p)
-
--- |
--- TODO replace with mapAccumL because need to accumulate p and g
-selector :: (TreeState p) => [NodeSequence g p o a] -> NodeSequence g p o a
-selector ns = NodeSequence func where 
-	func g p = over _3 stackPop $ (runNodes selectedNode) g (stackPush p) where
-		selectedNode = fromMaybe empty $ find (\(NodeSequence n) -> (\case (_,_,_,x,_)-> x == SUCCESS) $ n g p) ns
-
--- |
--- TODO replace with mapAccumL because need to accumulate p and g
-weightedSelection :: (RandomGen g, Ord w, Random w, Num w) => g -> [(w,a)] -> (Maybe a, g)
-weightedSelection g ns = r where
-	zero = fromInteger 0
-	total = foldl (\acc x -> fst x + acc) zero ns 
-	(rn, g') = randomR (zero, total) g
-	r = case find (\(w, _) -> w >= rn) ns of
-		Just (_,n) -> (Just n, g') 
-		Nothing -> (Nothing, g')
-
--- |
--- TODO replace with mapAccumL because need to accumulate p and g
-weightedSelector :: (RandomGen g, TreeState p, Ord w, Num w, Random w) => [(w, NodeSequence g p o a)] -> NodeSequence g p o a
-weightedSelector ns = NodeSequence func where  
-	func g p = over _3 stackPop $ (runNodes selectedNode) g' (stackPush p) where
-		(msn, g') = weightedSelection g ns
-		selectedNode = fromMaybe empty msn
-
--- |
--- TODO replace with mapAccumL because need to accumulate p and g
-utilitySelector :: (TreeState p, Ord a) => [NodeSequence g p o a] -> NodeSequence g p o a
-utilitySelector ns = NodeSequence func where 
-	func g p = over _3 stackPop $ (runNodes selectedNode) g (stackPush p) where
-		compfn n = (\(a,_,_,_,_)->a) $ (runNodes n) g p
-		selectedNode = if length ns == 0 then empty else maximumBy (comparing compfn) ns
-
-result :: Status -> NodeSequence g p o ()
-result s = NodeSequence (\g p -> ((), g, p, s, []))
-
-flipResult :: NodeSequence g p o a -> NodeSequence g p o a
-flipResult n = NodeSequence func where
-		func g p = over _4 flipr $ (runNodes n) g p 
-		flipr s = if s == SUCCESS then FAIL else SUCCESS
-
-rand :: (RandomGen g) => Float -> NodeSequence g p o ()
-rand rn = do
-	r <- getRandomR (0,1)
-	guard (r < rn)
 
 {-
 makeSequence $ do
