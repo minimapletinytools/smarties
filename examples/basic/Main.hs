@@ -7,7 +7,7 @@ import Smarties2
 import System.Random
 import Control.Monad.Random hiding (sequence)
 import Prelude hiding (sequence)
-import Data.List (mapAccumL)
+import Data.List (mapAccumL, intercalate)
 
 data Pronoun = HeHim | SheHer | TheyThem | FooBar | Other | Undecided deriving (Eq, Show)
 
@@ -63,7 +63,7 @@ instance TreeState SchoolTreeState
 type ActionType = (Student -> Student)
 
 actionChangePronoun p = fromAction $ 
-    SimpleAction (\(sc, st) -> (\(Student a _ c d) -> Student a p c d))
+    SimpleAction (\(sc, st) -> (\(Student a _ _ d) -> Student a p True d))
 
 actionChangeBack = fromAction $
     SimpleAction (\(sc, st) -> (\(Student a _ c d) -> Student a a c d))
@@ -82,28 +82,28 @@ studentTree = utilityWeightedSelector
         a <- utilityNormalness (toZeroOne . openlyChange)
         b <- utilityProperty feminimity
         actionChangePronoun SheHer
-        return $ a * b * 0.1
+        return $ (a+0.1) * b * 0.1
     ,sequence $ do
         a <- utilityNormalness (toZeroOne . openlyChange)
         b <- utilityProperty masculinity
         actionChangePronoun HeHim
-        return $ a * b
+        return $ (a+0.1) * b * 0.1
     ,sequence $ do
         a <- utilityNormalness (toZeroOne . openlyChange)
         b <- utilityProperty developer
         actionChangePronoun FooBar
-        return $ a * b * 0.1
+        return $ (a+0.1) * b * 0.1
     ,sequence $ do
         a <- utilityNormalness (toZeroOne . openlyChange)
         b <- utilityProperty noneOfTheAbove
         actionChangePronoun Other
-        return $ a * b * 0.1
+        return $ (a+0.1) * b * 0.1
     ,sequence $ do
         a <- utilityNormalness (toZeroOne . openlyChange)
         m <- utilityProperty masculinity
         f <- utilityProperty feminimity
         actionChangePronoun TheyThem
-        return $ a * ((1.0-m)+(1.0-f)) / 2.0
+        return $ (a+0.1) * ((1.0-m)+(1.0-f)) / 2.0
     ,sequence $ do
         a <- utilityProperty indecisiveness
         actionChangeBack
@@ -128,12 +128,11 @@ main = do
     let
         studentfn g s = (g', (foldl (.) id os) s) where
             (g', _, _, os) = runNodeSequence studentTree g (students, s)
-        ticktStudents sts = snd $ mapAccumL studentfn stdgen sts
-        loop 0 sts = return sts
-        loop n sts = do 
-            let
-                nextsts = ticktStudents sts
-            putStrLn . show $ nextsts
-            loop (n-1) nextsts
-    sts <- loop 365 students
-    putStrLn $ map (\s -> show (preferredPronoun s) ++ show (assignedPronoun s)) sts
+        ticktStudents g sts = mapAccumL studentfn g sts
+        loop 0 g sts = return sts
+        loop n g sts = do 
+            let (g', nextsts) = ticktStudents g sts
+            putStrLn . show $ (sum . map (toZeroOne . openlyChange) $ nextsts) / (fromIntegral $ length nextsts) 
+            loop (n-1) g' nextsts
+    sts <- loop 365 stdgen students
+    putStrLn $ intercalate "\n" $ map (\s -> show (preferredPronoun s) ++ " " ++ show (assignedPronoun s)) sts
