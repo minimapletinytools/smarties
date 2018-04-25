@@ -4,7 +4,7 @@ Smarties is a general purpose [behavior tree](https://en.wikipedia.org/wiki/Beha
 
 Smarties comes in 2 parts. The core library containing all the tree logic and a special State Monad that enables a DSL for writing compile-time behavior trees in an intuitive way. The core library provides basic control and utility nodes and the user implements their own *condition*, *action*, *utility* and *perception* nodes that operates on their own data type.
 
-_This library is still in alpha and actively being developed. The next version will be on hackage and will include several major API changes that should greatly improve useability. Please see [Future Development](#missing) for more details_
+_This library is still in alpha and actively being developed. The next version will be on hackage and will include several major API changes that should greatly improve useability. Please see Smarties2 in source for a sneak preview and read [Future Development](#missing) for more details_
 
 ## Example
 ```haskell
