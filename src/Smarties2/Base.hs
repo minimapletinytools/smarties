@@ -20,27 +20,27 @@ import Data.List (find)
 
 data Status = SUCCESS | FAIL deriving (Eq, Show)
 
-data UtilityNode g p o = (RandomGen g) => UtilityNode {
+data UtilityNode g p o =  UtilityNode {
 	utility :: g -> p -> (Float, g)
 }
 
-data PerceptionNode g p o = (RandomGen g) => PerceptionNode {
+data PerceptionNode g p o =  PerceptionNode {
 	perception :: g -> p -> (g, p)
 }
 
-data ActionNode g p o =  (RandomGen g) => ActionNode {
+data ActionNode g p o =   ActionNode {
 	action :: g -> p -> (g, o)	
 }
 
-makeUtility :: (RandomGen g) => UtilityNode g p o -> NodeSequence g p o Float
+makeUtility ::  UtilityNode g p o -> NodeSequence g p o Float
 makeUtility (UtilityNode n) = NodeSequence fun where
 	fun g p = (u, g', SUCCESS, p, []) where
 		(u, g') = n g p
 
-data NodeSequence g p o a = (RandomGen g) => NodeSequence { runNodes :: g -> p -> (a, g, Status, p, [o]) }
+data NodeSequence g p o a =  NodeSequence { runNodes :: g -> p -> (a, g, Status, p, [o]) }
 
 -- this looks a lot like StateT Writer
-instance (RandomGen g) => Monad (NodeSequence g p o) where
+instance  Monad (NodeSequence g p o) where
 	-- should only ever be used by sequence type nodes
 	(>>=) :: NodeSequence g p o a -> (a -> NodeSequence g p o b) -> NodeSequence g p o b
 	NodeSequence n >>= f = NodeSequence func where
@@ -54,7 +54,7 @@ instance (RandomGen g) => Monad (NodeSequence g p o) where
 			
 	
 
-{-instance (RandomGen g) => MonadRandom (NodeSequence g p o) where
+instance (RandomGen g) => MonadRandom (NodeSequence g p o) where
     getRandom = do
     	g <- getGenerator
     	let (a, g') = random g
@@ -67,21 +67,21 @@ instance (RandomGen g) => Monad (NodeSequence g p o) where
     	return a
 	--getRandoms = getGenerator >>= iterate getRandom
     --getRandomRs r = getGenerator >>= iterate (getRandomR r)
-    -}
+    
 
 
-instance (RandomGen g) => Alternative (NodeSequence g p o) where
+instance  Alternative (NodeSequence g p o) where
 	--empty :: NodeSequence g p o a
 	empty = NodeSequence func where
 		func g p = (error "trying to pull value from a guard", g, FAIL, p, [])
 	a <|> b = a >>= \_ -> b
 
-instance (RandomGen g) => Functor (NodeSequence g p o) where
+instance  Functor (NodeSequence g p o) where
 	fmap f n = do 
 		a <- n
 		return $ f a
 
-instance (RandomGen g) => Applicative (NodeSequence g p o) where
+instance  Applicative (NodeSequence g p o) where
 	pure a = NodeSequence (\g p -> (a, g, SUCCESS, p, []))
 	-- we should do something naughty here instead of reusing >>=
 	liftA2 f n1 n2 = do 
@@ -89,21 +89,19 @@ instance (RandomGen g) => Applicative (NodeSequence g p o) where
 		b <- n2
 		return $ f a b
 
-
-getState :: (RandomGen g) =>  NodeSequence g p o p
+getState ::   NodeSequence g p o p
 getState = NodeSequence $ (\g p -> (p, g, SUCCESS, p, []))
 
---getGenerator :: (RandomGen g) => NodeSequence g p o g
---getGenerator = NodeSequence $ (\g p -> (g, g, SUCCESS, p, []))
+getGenerator ::  NodeSequence g p o g
+getGenerator = NodeSequence $ (\g p -> (g, g, SUCCESS, p, []))
 
---setGenerator :: (RandomGen g) => g -> NodeSequence () p o p
---setGenerator g = NodeSequence $ (\_ p -> ((), g, SUCCESS, p, []))
-
+setGenerator :: (RandomGen g) => g -> NodeSequence g p o ()
+setGenerator g = NodeSequence $ (\_ p -> ((), g, SUCCESS, p, []))
 
 makeSequence :: (RandomGen g) => NodeSequence g p o a -> NodeSequence g p o a 
 makeSequence = id
 
-selector :: (RandomGen g) => [NodeSequence g p o a] -> NodeSequence g p o a
+selector ::  [NodeSequence g p o a] -> NodeSequence g p o a
 selector ns = NodeSequence fun where 
 	fun g p = (runNodes selectedNode) g p where
 		selectedNode = fromMaybe empty $ find (\(NodeSequence n) -> (\case (_,_,x,_,_)-> x == SUCCESS) $ n g p) ns
