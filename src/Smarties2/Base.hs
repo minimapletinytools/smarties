@@ -10,7 +10,8 @@ import Control.Monad.Random
 import Control.Applicative.Alternative
 
 import Data.Maybe (fromMaybe)
-import Data.List (find)
+import Data.List (find, maximumBy)
+import Data.Ord (comparing)
 
 
 
@@ -41,7 +42,28 @@ makeUtility (UtilityNode n) = NodeSequence fun where
 -- TODO add a (scope :: Bool) input parameter
 data NodeSequence g p o a =  NodeSequence { runNodes :: g -> p -> (a, g, p, Status, [o]) }
 
--- this looks a lot like StateT Writer
+instance  Functor (NodeSequence g p o) where
+	fmap f n = do 
+		a <- n
+		return $ f a
+
+instance  Applicative (NodeSequence g p o) where
+	pure a = NodeSequence (\g p -> (a, g, p, SUCCESS, []))
+	-- we should do something naughty here instead of reusing >>=
+	liftA2 f n1 n2 = do 
+		a <- n1
+		b <- n2
+		return $ f a b
+		
+instance Alternative (NodeSequence g p o) where
+	--empty :: NodeSequence g p o a
+	empty = NodeSequence func where
+		func g p = (error "trying to pull value from a guard", g, p, FAIL, [])
+	a <|> b = a >>= \_ -> b
+
+-- | 
+-- note this looks a lot like (StateT (g,p) Writer o) but has special functionality built in
+-- note, I'm pretty sure this does not satisfy monad laws
 instance  Monad (NodeSequence g p o) where
 	-- should only ever be used by sequence type nodes
 	(>>=) :: NodeSequence g p o a -> (a -> NodeSequence g p o b) -> NodeSequence g p o b
@@ -71,26 +93,6 @@ instance (RandomGen g) => MonadRandom (NodeSequence g p o) where
     --getRandomRs r = getGenerator >>= iterate (getRandomR r)
     
 
-
-instance Alternative (NodeSequence g p o) where
-	--empty :: NodeSequence g p o a
-	empty = NodeSequence func where
-		func g p = (error "trying to pull value from a guard", g, p, FAIL, [])
-	a <|> b = a >>= \_ -> b
-
-instance  Functor (NodeSequence g p o) where
-	fmap f n = do 
-		a <- n
-		return $ f a
-
-instance  Applicative (NodeSequence g p o) where
-	pure a = NodeSequence (\g p -> (a, g, p, SUCCESS, []))
-	-- we should do something naughty here instead of reusing >>=
-	liftA2 f n1 n2 = do 
-		a <- n1
-		b <- n2
-		return $ f a b
-
 -- | NodeSequence builder helper 
 getState ::   NodeSequence g p o p
 getState = NodeSequence $ (\g p -> (p, g, p, SUCCESS, []))
@@ -102,16 +104,19 @@ getGenerator = NodeSequence $ (\g p -> (g, g, p, SUCCESS, []))
 setGenerator :: (RandomGen g) => g -> NodeSequence g p o ()
 setGenerator g = NodeSequence $ (\_ p -> ((), g, p, SUCCESS, []))
 
-
 sequence :: (TreeState p) => NodeSequence g p o a -> NodeSequence g p o a 
 sequence ns = NodeSequence func where
 		func g p = over _3 stackPop $ (runNodes ns) g (stackPush p)
 
+-- |
+-- TODO replace with mapAccumL because need to accumulate p and g
 selector :: (TreeState p) => [NodeSequence g p o a] -> NodeSequence g p o a
 selector ns = NodeSequence func where 
 	func g p = over _3 stackPop $ (runNodes selectedNode) g (stackPush p) where
 		selectedNode = fromMaybe empty $ find (\(NodeSequence n) -> (\case (_,_,_,x,_)-> x == SUCCESS) $ n g p) ns
 
+-- |
+-- TODO replace with mapAccumL because need to accumulate p and g
 weightedSelection :: (RandomGen g, Ord w, Random w, Num w) => g -> [(w,a)] -> (Maybe a, g)
 weightedSelection g ns = r where
 	zero = fromInteger 0
@@ -121,11 +126,21 @@ weightedSelection g ns = r where
 		Just (_,n) -> (Just n, g') 
 		Nothing -> (Nothing, g')
 
+-- |
+-- TODO replace with mapAccumL because need to accumulate p and g
 weightedSelector :: (RandomGen g, TreeState p, Ord w, Num w, Random w) => [(w, NodeSequence g p o a)] -> NodeSequence g p o a
 weightedSelector ns = NodeSequence func where  
 	func g p = over _3 stackPop $ (runNodes selectedNode) g' (stackPush p) where
 		(msn, g') = weightedSelection g ns
 		selectedNode = fromMaybe empty msn
+
+-- |
+-- TODO replace with mapAccumL because need to accumulate p and g
+utilitySelector :: (TreeState p, Ord a) => [NodeSequence g p o a] -> NodeSequence g p o a
+utilitySelector ns = NodeSequence func where 
+	func g p = over _3 stackPop $ (runNodes selectedNode) g (stackPush p) where
+		compfn n = (\(a,_,_,_,_)->a) $ (runNodes n) g p
+		selectedNode = if length ns == 0 then empty else maximumBy (comparing compfn) ns
 
 result :: Status -> NodeSequence g p o ()
 result s = NodeSequence (\g p -> ((), g, p, s, []))
