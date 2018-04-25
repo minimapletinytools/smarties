@@ -129,10 +129,11 @@ main = do
         studentfn g s = (g', (foldl (.) id os) s) where
             (g', _, _, os) = runNodeSequence studentTree g (students, s)
         ticktStudents sts = snd $ mapAccumL studentfn stdgen sts
-        loop 0 sts = return ()
+        loop 0 sts = return sts
         loop n sts = do 
             let
                 nextsts = ticktStudents sts
             putStrLn . show $ nextsts
             loop (n-1) nextsts
-    loop 365 students
+    sts <- loop 365 students
+    putStrLn $ map (\s -> show (preferredPronoun s) ++ show (assignedPronoun s)) sts
