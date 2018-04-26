@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs           #-}
 
-module Smarties.TreeState (
+module NotSoSmarties.TreeState (
     TreeState(..),
     BasicTreeState(..),
     _bState,
@@ -11,7 +11,7 @@ module Smarties.TreeState (
     makeAdvancedTreeState
 ) where
 
-import Smarties.TreeStack
+import NotSoSmarties.TreeStack
 
 import           Control.Lens
 import           System.Random (RandomGen (..))

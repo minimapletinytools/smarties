@@ -1,17 +1,17 @@
-module Smarties (
-    module Smarties.Base,
-    module Smarties.Nodes,
-    module Smarties.Builder,
-    module Smarties.BuilderNodes,
-    module Smarties.TreeState
+module NotSoSmarties (
+    module NotSoSmarties.Base,
+    module NotSoSmarties.Nodes,
+    module NotSoSmarties.Builder,
+    module NotSoSmarties.BuilderNodes,
+    module NotSoSmarties.TreeState
 ) where
 
 
-import Smarties.Base
-import Smarties.Nodes
-import Smarties.Builder
-import Smarties.BuilderNodes
-import Smarties.TreeState
+import NotSoSmarties.Base
+import NotSoSmarties.Nodes
+import NotSoSmarties.Builder
+import NotSoSmarties.BuilderNodes
+import NotSoSmarties.TreeState
 
 
 -- TODO 2.0

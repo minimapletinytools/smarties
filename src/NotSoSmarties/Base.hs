@@ -7,8 +7,8 @@
 --{-# LANGUAGE PatternSynonyms           #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
-module Smarties.Base (
-    module Smarties.TreeState,
+module NotSoSmarties.Base (
+    module NotSoSmarties.TreeState,
     TreeStatus(..),
     Distribution(..),
     Utility(..),
@@ -26,7 +26,7 @@ module Smarties.Base (
     tickTree
 ) where
 
-import Smarties.TreeState
+import NotSoSmarties.TreeState
 
 import           System.Random (RandomGen (..))
 

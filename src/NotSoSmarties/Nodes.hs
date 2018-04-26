@@ -6,7 +6,7 @@
 {-# LANGUAGE AllowAmbiguousTypes     #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
-module Smarties.Nodes (
+module NotSoSmarties.Nodes (
     Selector(..),
     Sequence(..),
     UtilitySelector(..),
@@ -18,7 +18,7 @@ module Smarties.Nodes (
     Result(..)
 ) where
 
-import Smarties.Base
+import NotSoSmarties.Base
 import System.Random (RandomGen, randomR, Random)
 import Data.List (mapAccumL, maximumBy, sortOn, find)
 import Data.Maybe (Maybe(..), fromJust  )

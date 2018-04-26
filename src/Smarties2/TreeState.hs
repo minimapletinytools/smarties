@@ -10,7 +10,7 @@ module Smarties2.TreeState (
     makeAdvancedTreeState
 ) where
 
-import Smarties.TreeStack
+import Smarties2.TreeStack
 
 import           Control.Lens
 

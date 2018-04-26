@@ -7,7 +7,7 @@ module Main where
 
 import System.Random
 import Control.Monad.Random hiding (sequence)
-import Smarties
+import NotSoSmarties
 import Prelude hiding (sequence)
 import Data.List (mapAccumL)
 

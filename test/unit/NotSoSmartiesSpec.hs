@@ -1,13 +1,17 @@
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE FlexibleInstances #-}
 
+module NotSoSmartiesSpec where
+
+import Test.Hspec
 
 import Prelude hiding (sequence)
 
-import Smarties hiding (Result)
-import qualified Smarties as Smarties
+import NotSoSmarties hiding (Result)
+import qualified NotSoSmarties as Smarties
 
 import Test.QuickCheck
+import Test.QuickCheck.All (allProperties)
 import Control.Monad (liftM, liftM2, replicateM, forM_)
 --import System.Random (mkStdGen, StdGen)
 
@@ -117,10 +121,8 @@ prop_autoTest t = (rslt == SUCCESS) == checkTree t where
         BrSequence -> con Sequence $ forM_ xs buildTree
         BrNot -> assert (length xs == 1) . dec Not . buildTree . head $ xs
 
-
-
 --Template haskell nonsense to run all properties prefixed with "prop_" in this file 
 return []
-main :: IO Bool
-main = $quickCheckAll
---main = $verboseCheckAll
+props = $allProperties
+
+spec = forM_ props (\(s,p) -> it s $ property $ p)

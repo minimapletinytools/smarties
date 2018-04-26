@@ -1,7 +1,7 @@
 {-# LANGUAGE AllowAmbiguousTypes     #-}
 {-# LANGUAGE ScopedTypeVariables       #-}
 
-module Smarties.BuilderNodes (
+module NotSoSmarties.BuilderNodes (
     selector,
     sequence,
     utilitySelector,
@@ -17,10 +17,10 @@ module Smarties.BuilderNodes (
 ) where
 
 import Prelude hiding (sequence, not, fail)
-import Smarties.Base
-import Smarties.TreeState()
-import Smarties.Builder
-import Smarties.Nodes
+import NotSoSmarties.Base
+import NotSoSmarties.TreeState()
+import NotSoSmarties.Builder
+import NotSoSmarties.Nodes
 
 selector :: (TreeState p) => SmTreeBuilder p o () -> SmTreeBuilder p o ()
 selector = con Selector

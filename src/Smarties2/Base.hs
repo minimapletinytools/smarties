@@ -108,16 +108,3 @@ instance (RandomGen g) => MonadRandom (NodeSequence g p o) where
     		(a, g') = randomR r g
     	setGenerator g'
     	return a
-
-
-    
-
-{-
-makeSequence $ do
-	selectSomething
-	conditionSomethingSelected
-	a <- utilityA
-	b <- utilityb
-	doSomething 
-	return makeUtility (a+b) -- utility of this sequence
-	-}

@@ -6,7 +6,7 @@
 {-# LANGUAGE MonoLocalBinds #-}
 
 
-module Smarties.Builder (
+module NotSoSmarties.Builder (
     defaultTreeBuilderState,
     SmTreeBuilderFlags(..),
     SmTreeBuilder,
@@ -19,7 +19,7 @@ module Smarties.Builder (
     addUtility
 ) where
 
-import Smarties.Base
+import NotSoSmarties.Base
 
 import           Control.Exception.Base   (assert)
 import           Control.Monad.State.Lazy (State, get, put, runState)

@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs           #-}
 
-module Smarties.TreeStack (
+module NotSoSmarties.TreeStack (
     TreeStackInfo(..),
     TreeStack(..),
     size,
