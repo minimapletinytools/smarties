@@ -10,10 +10,15 @@ Stability   : experimental
 --{-# LANGUAGE ApplicativeDo #-}
 --{-# RankNTypes #-}
 module Smarties.Base (
+	Reducer(..),
 	Status(..),
 	NodeSequence(..),
 	runNodeSequence,
+	runNodeSequenceTimes,
+	runNodeSequenceTimesFinalize,
 	getPerception,
+	setPerception,
+	tellOutput,
 	getGenerator,
 	setGenerator
 	-- $helperlink
@@ -31,14 +36,37 @@ import Control.Applicative.Alternative
 --https://ccrma.stanford.edu/~jos/sasp/Product_Two_Gaussian_PDFs.html
 --https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables
 
+class Reducer a s where
+	reduce :: [a] -> s -> s
+
+-- probably overlappable
+instance Reducer (a->a) a where
+	reduce os = foldr (.) id os
+
 data Status = SUCCESS | FAIL deriving (Eq, Show)
 
 -- |
 -- TODO add a (scope :: Bool) input parameter
 data NodeSequence g p o a =  NodeSequence { runNodes :: g -> p -> (a, g, p, Status, [o]) }
 
+-- | run a node sequence tossing its monadic output
 runNodeSequence :: NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
 runNodeSequence n g p = (\(_,g,p,s,os)->(g,p,s,os)) $ (runNodes n) g p
+
+-- | internal helper
+iterate_ :: Int -> (a -> a) -> a -> a
+iterate_ n f = foldr (.) id (replicate n f) 
+
+-- | run a node sequence several times using its output to generate the next perception state
+runNodeSequenceTimes :: (Reducer o p) => Int -> NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
+runNodeSequenceTimes num n _g _p = iterate_ num itfun (_g, _p, SUCCESS, []) where
+	itfun (g,p,_,os) = runNodeSequence n g (reduce os p)
+
+-- | same as runNodeSequenceTimes except reduces the final input with its output and only returns this result
+runNodeSequenceTimesFinalize :: (Reducer o p) => Int -> NodeSequence g p o a -> g -> p -> p
+runNodeSequenceTimesFinalize num n _g _p = reduce os p where
+	(_,p,_,os) = runNodeSequenceTimes num n _g _p
+
 
 -- $helperlink
 -- helpers for building NodeSequence in Monad land
@@ -46,6 +74,14 @@ runNodeSequence n g p = (\(_,g,p,s,os)->(g,p,s,os)) $ (runNodes n) g p
 -- | returns the perception state
 getPerception :: NodeSequence g p o p
 getPerception = NodeSequence $ (\g p -> (p, g, p, SUCCESS, []))
+
+-- | sets the perception state
+setPerception :: p -> NodeSequence g p o ()
+setPerception p' = NodeSequence $ (\g p -> ((), g, p', SUCCESS, []))
+
+-- | add to output
+tellOutput :: o -> NodeSequence g p o ()
+tellOutput o = NodeSequence $ (\g p -> ((), g, p, SUCCESS, [o]))
 
 -- | returns the generator 
 getGenerator ::  NodeSequence g p o g
@@ -90,7 +126,7 @@ instance  Monad (NodeSequence g p o) where
 		func g p = if s == FAIL then (b, g', p, FAIL, os) else keepGoing where 
 			(a, g', p', s, os) = n g p -- run original node, assume it succeded
 			NodeSequence n' = f a -- generate the next node
-			keepGoing = over _5 (os++) (n' g' p') -- run the next node
+			keepGoing = over _5 (++os) (n' g' p') -- run the next node
 			(b,_,_,_,_) = keepGoing	
 
 instance (RandomGen g) => MonadRandom (NodeSequence g p o) where

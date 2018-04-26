@@ -1,8 +1,8 @@
 # smarties
 
-Smarties is a general purpose [behavior tree](https://en.wikipedia.org/wiki/Behavior_tree_(artificial_intelligence,_robotics_and_control)) library written in Haskell. Smarties supports utility AI for advanced decision making. Smarties implements many of the design patterns outlined in this [paper](https://course.ccs.neu.edu/cs5150f13/readings/dill_designpatterns.pdf) and probably some that aren't.
+Smarties is a general purpose [behavior tree](https://en.wikipedia.org/wiki/Behavior_tree_(artificial_intelligence,_robotics_and_control)) library written in Haskell. The library supports utility AI for advanced decision making. Smarties implements many of the design patterns outlined in this [paper](https://course.ccs.neu.edu/cs5150f13/readings/dill_designpatterns.pdf) and some that aren't.
 
-Behavior trees are written in a DSL built with the *NodeSequence Monad* and return values are used for computing utility.
+Behavior trees are written in a DSL built with the *NodeSequence* monad. Monadic return values are used for computing utility.
 
 ## Example
 ```haskell
@@ -84,7 +84,7 @@ utilityNormalness f = fromUtility $
     SimpleUtility (\(sc, _) -> (sum . map f $ sc) / (fromIntegral $ length sc))
 ```
 
-Next we create several NodeSequences which will be the building blocks for our behavior tree. 
+Next we create several NodeSequences which will be the building blocks for our behavior tree. Smarties contains 4 helpers to facilitate making nodes: *Action*, *Condition*, *Perception* and *Utility*. Each helper has several constructors that represent subsets of a behavior tree operation. You can also use monadic syntax to create NodeSequences. There's a little more boiler plate and the syntax is a little more human readable.
 
 ```haskell
 studentTree :: (RandomGen g) => NodeSequence g SchoolTreeState ActionType Float
@@ -249,4 +249,6 @@ The type variable *x* in *AdvancedTreePerception* is used to pass this informati
 The next version will contain *selectorNoScope* which omits scoping behavior. I'm not convinced *sequenceNoScope* is necessary and implementing it requires adding another parameter to the underlying state transformations.
 
 - Support for [Statistic.Distribution.Normal](https://hackage.haskell.org/package/statistics-0.14.0.2/docs/Statistics-Distribution-Normal.html). A distribution a useful model for risk/reward based decision making.
+
+- The next version will promote *NodeSequence* to *NodeSequenceT*. Also considering using the *RandT* monad instead of reimplementing it in *NodeSequence* as it is right now.
 

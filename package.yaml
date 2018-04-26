@@ -43,6 +43,7 @@ default-extensions:
 - TupleSections
 - ScopedTypeVariables
 - FlexibleInstances
+- MultiParamTypeClasses
 
 library:
   source-dirs: src
