@@ -1,14 +1,14 @@
-module Smarties2 (
-    module Smarties2.Base,
-    module Smarties2.Nodes,
-    module Smarties2.Builders,
-    module Smarties2.TreeState
+module Smarties (
+    module Smarties.Base,
+    module Smarties.Nodes,
+    module Smarties.Builders,
+    module Smarties.TreeState
 ) where
 
-import Smarties2.Base
-import Smarties2.TreeState
-import Smarties2.Nodes
-import Smarties2.Builders
+import Smarties.Base
+import Smarties.TreeState
+import Smarties.Nodes
+import Smarties.Builders
 
 
 -- TODO 2.0

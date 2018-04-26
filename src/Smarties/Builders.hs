@@ -6,7 +6,7 @@ License     : GPL-3
 Maintainer  : chippermonky@email.com
 Stability   : experimental
 -}
-module Smarties2.Builders (
+module Smarties.Builders (
     -- $helper1link
     Utility(..),
     Perception(..),
@@ -18,7 +18,7 @@ module Smarties2.Builders (
     fromAction
 ) where
 
-import           Smarties2.Base
+import           Smarties.Base
 
 
 -- $helper1link

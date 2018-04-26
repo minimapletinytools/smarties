@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs           #-}
 
-module Smarties2.TreeState (
+module Smarties.TreeState (
     TreeState(..),
     BasicTreeState(..),
     _bState,
@@ -10,7 +10,7 @@ module Smarties2.TreeState (
     makeAdvancedTreeState
 ) where
 
-import Smarties2.TreeStack
+import Smarties.TreeStack
 
 import           Control.Lens
 

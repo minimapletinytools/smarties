@@ -3,7 +3,7 @@
 module Main where
 
 
-import Smarties2
+import Smarties
 import System.Random
 import Control.Monad.Random hiding (sequence)
 import Prelude hiding (sequence)

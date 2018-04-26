@@ -6,7 +6,7 @@ License     : GPL-3
 Maintainer  : chippermonky@email.com
 Stability   : experimental
 -}
-module Smarties2.Nodes (
+module Smarties.Nodes (
     -- $controllink
     sequence,
     selector,
@@ -27,8 +27,8 @@ module Smarties2.Nodes (
 
 import           Prelude                         hiding (sequence)
 
-import           Smarties2.Base
-import           Smarties2.TreeState
+import           Smarties.Base
+import           Smarties.TreeState
 
 import           Control.Applicative.Alternative
 import           Control.Lens

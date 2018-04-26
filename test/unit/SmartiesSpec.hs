@@ -12,7 +12,7 @@ import Test.Hspec
 
 import Control.Monad (forM_)
 
-import Smarties2
+import Smarties
 
 
 prop_dummy :: Bool

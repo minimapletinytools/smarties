@@ -9,7 +9,7 @@ Stability   : experimental
 
 --{-# LANGUAGE ApplicativeDo #-}
 --{-# RankNTypes #-}
-module Smarties2.Base (
+module Smarties.Base (
 	Status(..),
 	NodeSequence(..),
 	runNodeSequence,
@@ -19,7 +19,7 @@ module Smarties2.Base (
 	-- $helperlink
 ) where	
 
-import Smarties2.TreeState
+import Smarties.TreeState
 
 import Control.Lens
 import Control.Monad.Random
