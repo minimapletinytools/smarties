@@ -18,6 +18,11 @@ data Student = Student {
     jeans :: Int
 } deriving (Show)
 
+type School = [Student]
+type SchoolTreeState = (School, Student)
+instance TreeState SchoolTreeState 
+type ActionType = (Student -> Student)
+
 assignedPronounIs :: Pronoun -> Student -> Bool
 assignedPronounIs p s = preferredPronoun s == p
 
@@ -57,11 +62,6 @@ dogmaticBeliefInBinaryBiologicalDeterminism s = b s && not (chromeNeither s) whe
 toZeroOne :: Bool -> Float
 toZeroOne x = if x then 1.0 else 0.0
 
-type School = [Student]
-type SchoolTreeState = (School, Student)
-instance TreeState SchoolTreeState 
-type ActionType = (Student -> Student)
-
 actionChangePronoun :: Pronoun -> NodeSequence g SchoolTreeState ActionType ()
 actionChangePronoun p = fromAction $ 
     SimpleAction (\_ -> (\(Student a _ _ d) -> Student a p True d))
@@ -82,10 +82,9 @@ utilityNormalness :: (Student -> Float) -> NodeSequence g SchoolTreeState Action
 utilityNormalness f = fromUtility $
     SimpleUtility (\(sc, _) -> (sum . map f $ sc) / (fromIntegral $ length sc))
 
-
 studentTree :: (RandomGen g) => NodeSequence g SchoolTreeState ActionType Float
 studentTree = utilityWeightedSelector
-    [ return . (*0.15) . (+0.01) =<< utilityWeightedSelector 
+    [return . (*0.15) . (+0.01) =<< utilityWeightedSelector 
         [sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty feminimity
@@ -121,7 +120,6 @@ studentTree = utilityWeightedSelector
         a <- utilityNormalness ((1-) . toZeroOne . openlyChange)
         result SUCCESS 
         return a
-        
     ]
 
 makeStudent :: (RandomGen g) => Rand g Student
