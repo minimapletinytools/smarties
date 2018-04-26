@@ -1,5 +1,4 @@
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE FlexibleInstances #-}
 
 module NotSoSmartiesSpec where
 
@@ -13,7 +12,6 @@ import qualified NotSoSmarties as Smarties
 import Test.QuickCheck
 import Test.QuickCheck.All (allProperties)
 import Control.Monad (liftM, liftM2, replicateM, forM_)
---import System.Random (mkStdGen, StdGen)
 
 import           Control.Exception.Base   (assert)
 
