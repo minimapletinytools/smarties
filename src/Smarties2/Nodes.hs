@@ -38,6 +38,8 @@ import           Data.List                       (find, maximumBy, mapAccumL)
 import           Data.Maybe                      (fromMaybe)
 import           Data.Ord                        (comparing)
 
+import Debug.Trace (trace)
+
 
 -- $controllink
 -- control nodes
@@ -65,11 +67,12 @@ selector ns = NodeSequence func where
 
 -- |
 weightedSelection :: (RandomGen g, Ord w, Random w, Num w) => g -> [(w,a)] -> (Maybe a, g)
-weightedSelection g ns = r where
+weightedSelection g ns = if total /= 0 then r else weightedSelection g (zip ([0..]::[Int]) . map snd $ ns) where
     zero = fromInteger 0
-    total = foldl (\acc x -> fst x + acc) zero ns
+    one = fromInteger 1
+    (total, nssummed) = mapAccumL (\acc x -> (acc + fst x, (acc + fst x, snd x))) zero ns
     (rn, g') = randomR (zero, total) g
-    r = case find (\(w, _) -> w >= rn) ns of
+    r = case find (\(w, _) -> w >= rn) nssummed of
         Just (_,n) -> (Just n, g')
         Nothing    -> (Nothing, g')
 
@@ -101,9 +104,9 @@ utilityWeightedSelector ns = NodeSequence func where
         mapAccumFn acc x = (acc', r) where
             r = (runNodes x) acc (stackPush p)
             (_,acc',_,_,_) = r
-        compfn = (\(a,_,_,_,_)->a)
-        (selected', g'') = weightedSelection g' $ map (\x-> (compfn x,x)) rslts
-        selected = fromMaybe (error "utilitySelector: no children",g'',p,FAIL,[]) $ do
+        compelt = (\(a,_,_,_,_)->a)
+        (selected', g'') = weightedSelection g' $ map (\x-> (compelt x, x)) rslts
+        selected = fromMaybe (error "utilityWeightedSelector: no children",g'',p,FAIL,[]) $ do
             n <- selected'
             return $ set _2 g'' n
 

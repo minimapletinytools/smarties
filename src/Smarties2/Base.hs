@@ -90,7 +90,7 @@ instance  Monad (NodeSequence g p o) where
 		func g p = if s == FAIL then (b, g', p, FAIL, os) else keepGoing where 
 			(a, g', p', s, os) = n g p -- run original node, assume it succeded
 			NodeSequence n' = f a -- generate the next node
-			keepGoing = over _5 (++os) (n' g' p') -- run the next node
+			keepGoing = over _5 (os++) (n' g' p') -- run the next node
 			(b,_,_,_,_) = keepGoing	
 
 instance (RandomGen g) => MonadRandom (NodeSequence g p o) where
