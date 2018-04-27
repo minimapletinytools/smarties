@@ -12,10 +12,12 @@ module Smarties.Builders (
     Perception(..),
     Action(..),
     Condition(..),
+    SelfAction(..),
     fromUtility,
     fromPerception,
     fromCondition,
-    fromAction
+    fromAction,
+    fromSelfAction
 ) where
 
 import           Smarties.Base
@@ -44,6 +46,11 @@ data Action g p o where
 data Condition g p where
     Condition :: (g -> p -> (Bool, g)) -> Condition g p 
     SimpleCondition :: (p -> Bool) -> Condition g p 
+
+-- | same as Action except output is applied to perception
+data SelfAction g p o where
+    SelfAction :: (Reduceable p o) => (g -> p -> (g, o)) -> SelfAction g p o 
+    SimpleSelfAction :: (Reduceable p o) => (p -> o) -> SelfAction g p o
 
 fromUtility :: Utility g p a -> NodeSequence g p o a
 fromUtility n = NodeSequence $ case n of 
@@ -80,4 +87,10 @@ fromAction n = NodeSequence $ case n of
         func f g p = ((), g', p, SUCCESS, [o]) where
             (g', o) = f g p
 
-
+fromSelfAction :: SelfAction g p o -> NodeSequence g p o ()
+fromSelfAction n = NodeSequence $ case n of 
+    SelfAction f -> func f
+    SimpleSelfAction f -> func (\g p -> (g, f p))
+    where
+        func f g p = ((), g', reduce [o] p, SUCCESS, [o]) where
+            (g', o) = f g p

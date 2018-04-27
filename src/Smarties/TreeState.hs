@@ -24,12 +24,19 @@ class TreeState p where
     stackPush = id
     stackPop :: p -> p
     stackPop = id
+
+-- | split of indexable and markable. Scopeable is a requirement
+class (TreeState p) => Loopable p where
     stackLoopIndex :: p -> Int
     stackLoopIndex _ = 0
     incrementStackLoopIndex :: p -> p
     incrementStackLoopIndex = id
     resetStackLoopIndex :: p -> p
     resetStackLoopIndex = id
+
+class Markable p where 
+    mark :: String -> p -> p
+
 
 instance TreeState ()
 
@@ -65,6 +72,8 @@ instance TreeState (AdvancedTreeState x y) where
     stackSize x = size $ view _stack x
     stackPush x = over _stack push x
     stackPop x = over _stack pop x
+
+instance Loopable (AdvancedTreeState x y) where
     stackLoopIndex x = view _stackTopLoopingIndex x
     incrementStackLoopIndex x = (over (_stack . _top . _2)) (+1) x
     resetStackLoopIndex x = set (_stack . _top . _2) 0 x

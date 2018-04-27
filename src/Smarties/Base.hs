@@ -10,7 +10,7 @@ Stability   : experimental
 --{-# LANGUAGE ApplicativeDo #-}
 --{-# RankNTypes #-}
 module Smarties.Base (
-	Reducer(..),
+	Reduceable(..),
 	Status(..),
 	NodeSequence(..),
 	runNodeSequence,
@@ -36,12 +36,13 @@ import Control.Applicative.Alternative
 --https://ccrma.stanford.edu/~jos/sasp/Product_Two_Gaussian_PDFs.html
 --https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables
 
-class Reducer a s where
-	reduce :: [a] -> s -> s
+class Reduceable p o where
+	reduce :: [o] -> p -> p
 
--- probably overlappable
-instance Reducer (a->a) a where
+--probably {-# OVERLAPPABLE #-}
+instance Reduceable a (a->a) where
 	reduce os = foldr (.) id os
+
 
 data Status = SUCCESS | FAIL deriving (Eq, Show)
 
@@ -50,6 +51,7 @@ data Status = SUCCESS | FAIL deriving (Eq, Show)
 data NodeSequence g p o a =  NodeSequence { runNodes :: g -> p -> (a, g, p, Status, [o]) }
 
 -- | run a node sequence tossing its monadic output
+-- output is ordered from RIGHT to LEFT i.e. foldr when applying
 runNodeSequence :: NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
 runNodeSequence n g p = (\(_,g,p,s,os)->(g,p,s,os)) $ (runNodes n) g p
 
@@ -58,12 +60,12 @@ iterate_ :: Int -> (a -> a) -> a -> a
 iterate_ n f = foldr (.) id (replicate n f) 
 
 -- | run a node sequence several times using its output to generate the next perception state
-runNodeSequenceTimes :: (Reducer o p) => Int -> NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
+runNodeSequenceTimes :: (Reduceable p o) => Int -> NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
 runNodeSequenceTimes num n _g _p = iterate_ num itfun (_g, _p, SUCCESS, []) where
 	itfun (g,p,_,os) = runNodeSequence n g (reduce os p)
 
 -- | same as runNodeSequenceTimes except reduces the final input with its output and only returns this result
-runNodeSequenceTimesFinalize :: (Reducer o p) => Int -> NodeSequence g p o a -> g -> p -> p
+runNodeSequenceTimesFinalize :: (Reduceable p o) => Int -> NodeSequence g p o a -> g -> p -> p
 runNodeSequenceTimesFinalize num n _g _p = reduce os p where
 	(_,p,_,os) = runNodeSequenceTimes num n _g _p
 

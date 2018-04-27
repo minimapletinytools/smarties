@@ -161,7 +161,7 @@ Finally, we run the tree and output the results :D.
 
 ## Terminology
 
-- *perception*: input and computation state of the behavior tree. Named perception because it represents how the tree perceives the outside world. *perception* is not mutable when executing the tree and can be used to carry computation state. While it is possible to modify the input portion of the *perception* this is not recommended.
+- *perception*: input and computation state of the behavior tree. Named perception because it represents how the tree perceives the outside world. *perception* is not mutable when executing the tree and can be used to carry computation state. It is possible to modify the input portion of the *perception*. This is only recommended in the special case where the input state is same as what the tree is operating on as a whole in which case the tree represents a sequential set of operations on a value. e.g. *NodeSequnce g Int (Int->Int)* represents operations on an Int value. In these cases, ensure the *Reduceable p o* constraint is satisfied and use *SelfAction* which is the same as *Action* except also applies the output to the perception.
 - *seqence*: control node that executes each child node in sequence until it hits a FAIL node and collects all output. 
 - *selector*: control node that executes the first SUCCESS node.
 - *utility*: optional monadic output for a node that can be used for more complex control flow. For example *utilitySelector* executes the node that has the largest utility.
@@ -188,7 +188,7 @@ The sequence represents a computation that takes a generator and perception and 
 
 ## Advanced features
 
-If you look at the methods in *TreeState* you will see it contains many stack operations. *AdvancedTreePerception x y* provides a default implemantion of these using *TreeStack x*. The purpose of this is to allow nodes to create state for future nodes to operate on. For example, lets say each student in our example has a best friend and a crush. These students _their_ friends/crushes strongly strongly influence the student's decision to change pronouns. Also apologies for very subtly suggesting that monogamy is the only option... Naively approaching this, we may find ourselves creating several nodes:
+- If you look at the methods in *TreeState* you will see it contains many stack operations. *AdvancedTreePerception x y* provides a default implemantion of these using *TreeStack x*. The purpose of this is to allow nodes to create state for future nodes to operate on. For example, lets say each student in our example has a best friend and a crush. These students _their_ friends/crushes strongly strongly influence the student's decision to change pronouns. Also apologies for very subtly suggesting that monogamy is the only option... Naively approaching this, we may find ourselves creating several nodes:
 
 ```haskell
 conditionBestFriendFoo = ... 
@@ -228,7 +228,7 @@ The type variable *x* in *AdvancedTreePerception* is used to pass this informati
 		colorSelectedSquare
 ```
 
-- Modelling history patterns is challenging here since the tree produces no side effects. It's easy to add another parameter to update containing a zipper tracking which node we are at and nodes can manage their records in the state. Alternatively, the builder can flag each node with a unique index for the same purpose. A full blown solution may include default parameters in these records such as number of times run, and last success. The downside here is further expanding the already bloated TreeState typeclass.
+- Modelling history patterns is challenging here since the tree produces no side effects. In a previous implementation I could have added a *get/setZipper* method to *TreeState* tracking which node we are at and nodes can manage their records in the state. Currently, as sequences are represented as monads, it would be possible to implement a monadic if/else that would not be possible to track :(. Perhaps the better solution is to add *markOnExecution :: String -> NodeSequence g p o ()* and leave the tracking to the user.
 
 - Currently it impossible to capture perception changes in child nodes due to scoping in sequences and selectors. This is desired behavior until it's not. For example the following use case is not possible:
 
@@ -246,9 +246,9 @@ The type variable *x* in *AdvancedTreePerception* is used to pass this informati
 		... 
 ```
 
-The next version will contain *selectorNoScope* which omits scoping behavior. I'm not convinced *sequenceNoScope* is necessary and implementing it requires adding another parameter to the underlying state transformations.
+- The next version will contain *selectorNoScope* which omits scoping behavior. I'm not convinced *sequenceNoScope* is necessary and implementing it requires adding another parameter to the underlying state transformations.
 
 - Support for [Statistic.Distribution.Normal](https://hackage.haskell.org/package/statistics-0.14.0.2/docs/Statistics-Distribution-Normal.html). A distribution a useful model for risk/reward based decision making.
 
-- The next version will promote *NodeSequence* to *NodeSequenceT*. Also considering using the *RandT* monad instead of reimplementing it in *NodeSequence* as it is right now.
+- The next version will probably promote *NodeSequence* to *NodeSequenceT*. ~~Also considering using the *RandT* monad instead of reimplementing it in *NodeSequence* as it is right now.~~ 
 
