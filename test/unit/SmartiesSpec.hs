@@ -42,7 +42,7 @@ type GeneratorType = ()
 type PerceptionType = Int 
 type OutputType = Int -> Int
 
-instance TreeState PerceptionType
+instance Scopeable PerceptionType
 
 addAction :: Int -> NodeSequence GeneratorType PerceptionType OutputType ()
 addAction n = fromAction $ SimpleAction (\_ -> (+n))

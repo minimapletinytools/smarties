@@ -128,7 +128,7 @@ studentTree = utilityWeightedSelector
     ]
 ```
 
-Using our NodeSequences, we define the tree itself. Note that there is overlap between *NodeSequence* and *sequence*. 
+Using our NodeSequences, we define the tree itself. Note that *sequence $ do* is the same as just *do* and used for semantic clarity.
 
 ```haskell
 makeStudent :: (RandomGen g) => Rand g Student
@@ -188,7 +188,7 @@ The sequence represents a computation that takes a generator and perception and 
 
 ## Advanced features
 
-- If you look at the methods in *TreeState* you will see it contains many stack operations. *AdvancedTreePerception x y* provides a default implemantion of these using *TreeStack x*. The purpose of this is to allow nodes to create state for future nodes to operate on. For example, lets say each student in our example has a best friend and a crush. These students _their_ friends/crushes strongly strongly influence the student's decision to change pronouns. Also apologies for very subtly suggesting that monogamy is the only option... Naively approaching this, we may find ourselves creating several nodes:
+- Nodes can modify perception for future nodes to operate on. For example, lets say each student in our example has a best friend and a crush. These students _their_ friends/crushes strongly strongly influence the student's decision to change pronouns. Also apologies for very subtly suggesting that monogamy is the only option... Naively approaching this, we may find ourselves creating several nodes:
 
 ```haskell
 conditionBestFriendFoo = ... 
@@ -208,27 +208,25 @@ conditionMarkedStudentFoo = ...
 
 allowing nodes to change the computation context of future nodes. This is both more general and signficantly reduces the amount of needed nodes for creating more complex computation spaces.
 
-The type variable *x* in *AdvancedTreePerception* is used to pass this information around the tree. The reason it's embedded in *TreeStack x* is to add scoping behavior to this information. For example
+It is expected that perception implements *Scopeable* if you want to do this. Scopeable creates a scoping behavior for the computational variables. *(TreeStackInfo x) => TreeState x y* offers a default implementation of this where x is the scopeable computational state and y is the (not actually immutable) input state. Scopes must be explicitly created using the *scope* decorator. For example:
 
 ```haskell
 -- TODO
 ```
 
-*AdvancedTreePerception* is sufficient enough for all needs I can think of. The only reason things are done through the *TreeState* typeclass is precisely so the library can _hide_ some of the generality of *AdvancedTreePerception*. 
-
 ## Future Development: <a id="missing"></a>
 
-- The *TreeState* typeclass has support for a looping index but there are no supporting control nodes. A looping index makes our language turing complete :). Besides good feels though, the main use of this is for code reuse. For example:
+- There is *class Loopable* but there are no supporting control nodes. A looping index makes our language turing complete :). Besides good feels though, the main use of this is for code reuse. For example:
 
 ```haskell
-	selectorForEach $ do
+	scope $ selectorForEach $ do
 		selectNthSquare
 		i <- getSelection
 		guard $ i `mod` 2 == 0
 		colorSelectedSquare
 ```
 
-- Modelling history patterns is challenging here since the tree produces no side effects. In a previous implementation I could have added a *get/setZipper* method to *TreeState* tracking which node we are at and nodes can manage their records in the state. Currently, as sequences are represented as monads, it would be possible to implement a monadic if/else that would not be possible to track :(. Perhaps the better solution is to add *markOnExecution :: String -> NodeSequence g p o ()* and leave the tracking to the user.
+- Modelling history patterns is challenging here since the tree produces no side effects. In a previous implementation I could have added a *get/setZipper* method to *TreeState* tracking which node we are at and nodes can manage their records in the state. Currently, as sequences are represented as monads, it would be possible to implement a monadic if/else that would not be possible to track :(. The current solution is to add *markOnExecution :: (Markable p) => String -> NodeSequence g p o ()* and leave the tracking to the user. 
 
 - Currently it impossible to capture perception changes in child nodes due to scoping in sequences and selectors. This is desired behavior until it's not. For example the following use case is not possible:
 

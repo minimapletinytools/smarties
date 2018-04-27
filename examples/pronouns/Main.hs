@@ -20,7 +20,6 @@ data Student = Student {
 
 type School = [Student]
 type SchoolTreeState = (School, Student)
-instance TreeState SchoolTreeState 
 type ActionType = (Student -> Student)
 
 assignedPronounIs :: Pronoun -> Student -> Bool

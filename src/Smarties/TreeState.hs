@@ -1,13 +1,11 @@
 {-# LANGUAGE GADTs           #-}
 
 module Smarties.TreeState (
+    Scopeable(..),
     TreeState(..),
-    BasicTreeState(..),
-    _bState,
-    AdvancedTreeState(..),
     _stack,
     _perception,
-    makeAdvancedTreeState
+    makeTreeState
 ) where
 
 import Smarties.TreeStack
@@ -15,66 +13,49 @@ import Smarties.TreeStack
 import           Control.Lens
 
 
--- | TreeState type class for use as computation state in behavior tree traversals
+-- | Scopeable type class for use as computation state in behavior tree traversals
 -- default implementation noops on all stack operations
-class TreeState p where
+class Scopeable p where
     stackSize :: p -> Int
-    stackSize _ = 0
     stackPush :: p -> p
-    stackPush = id
     stackPop :: p -> p
-    stackPop = id
 
--- | split of indexable and markable. Scopeable is a requirement
-class (TreeState p) => Loopable p where
-    stackLoopIndex :: p -> Int
-    stackLoopIndex _ = 0
+-- | split of indexable and markable
+-- note if both Stackable and Loopable, the looping index is expected to live on the stack
+class Loopable p where
+    loopIndex :: p -> Int
     incrementStackLoopIndex :: p -> p
-    incrementStackLoopIndex = id
     resetStackLoopIndex :: p -> p
-    resetStackLoopIndex = id
 
 class Markable p where 
     mark :: String -> p -> p
 
+data TreeState x y where
+    TreeState :: (TreeStackInfo x) => TreeStack x -> y -> TreeState x y
 
-instance TreeState ()
+_stack :: Lens' (TreeState x y) (TreeStack x)
+_stack f (TreeState x y) = fmap (\x' -> TreeState x' y) (f x)
 
-data BasicTreeState p where
-    BasicTreeState :: p -> BasicTreeState p 
-
-_bState :: Lens' (BasicTreeState p) p
-_bState f (BasicTreeState x) = fmap (\x' -> BasicTreeState x') (f x)
-
--- | all default implementation is good
-instance TreeState (BasicTreeState p)
-
-data AdvancedTreeState x y where
-    AdvancedTreeState :: (TreeStackInfo x) => TreeStack x -> y -> AdvancedTreeState x y
-
-_stack :: Lens' (AdvancedTreeState x y) (TreeStack x)
-_stack f (AdvancedTreeState x y) = fmap (\x' -> AdvancedTreeState x' y) (f x)
-
-_stackTopValue :: Lens' (AdvancedTreeState x y) x
+_stackTopValue :: Lens' (TreeState x y) x
 _stackTopValue = _stack . _top . _1
 
 -- this warns because of lens nonsense
-_stackTopLoopingIndex :: Getter (AdvancedTreeState x y) Int
+_stackTopLoopingIndex :: Getter (TreeState x y) Int
 _stackTopLoopingIndex = _stack . _top . _2
 
-_perception :: Lens' (AdvancedTreeState x y) y
-_perception f (AdvancedTreeState x y) = fmap (\y' -> AdvancedTreeState x y') (f y)
+_perception :: Lens' (TreeState x y) y
+_perception f (TreeState x y) = fmap (\y' -> TreeState x y') (f y)
 
-makeAdvancedTreeState :: (TreeStackInfo x) => y -> AdvancedTreeState x y
-makeAdvancedTreeState = AdvancedTreeState (TreeStack [])
+makeTreeState :: (TreeStackInfo x) => y -> TreeState x y
+makeTreeState = TreeState (TreeStack [])
 
-instance TreeState (AdvancedTreeState x y) where
+instance Scopeable (TreeState x y) where
     stackSize x = size $ view _stack x
     stackPush x = over _stack push x
     stackPop x = over _stack pop x
 
-instance Loopable (AdvancedTreeState x y) where
-    stackLoopIndex x = view _stackTopLoopingIndex x
+instance Loopable (TreeState x y) where
+    loopIndex x = view _stackTopLoopingIndex x
     incrementStackLoopIndex x = (over (_stack . _top . _2)) (+1) x
     resetStackLoopIndex x = set (_stack . _top . _2) 0 x
 
