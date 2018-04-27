@@ -71,15 +71,20 @@ prop_addition :: Int -> (NonNegative Int) -> Bool
 prop_addition a (NonNegative b) = runNodeSequenceTimesFinalize b (addAction a) () 0 == a*b
 
 prop_addition_sequence :: Int -> (NonNegative Int) -> Bool
-prop_addition_sequence a (NonNegative b) = (reduce os p == a*b) && s == SUCCESS where
-	tree = forM_ [0..(b-1)] (\_->addAction a)
-	(_,p,s,os) = runNodeSequence tree () 0
+prop_addition_sequence a (NonNegative b) = (reduce os p == a*b) && s == FAIL where
+    (_,p,s,os) = runNodeSequence tree () 0
+    tree = do 
+        forM_ [0..(b-1)] (\_->addAction a)
+        result FAIL
+        forM_ [0..100] (\_->addAction a)
+
 
 -- TODO
 
 
---Template haskell nonsense to run all properties prefixed with "prop_" in this file 
+-- Template haskell nonsense to run all properties prefixed with "prop_" in this file 
 return []
 props = $allProperties
 
+-- hspec nonsense
 spec = forM_ props (\(s,p) -> it s $ property $ p)

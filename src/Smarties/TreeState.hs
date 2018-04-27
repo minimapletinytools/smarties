@@ -12,6 +12,8 @@ import Smarties.TreeStack
 
 import           Control.Lens
 
+import Data.Text as T
+
 
 -- | Scopeable type class for use as computation state in behavior tree traversals
 -- default implementation noops on all stack operations
@@ -20,15 +22,17 @@ class Scopeable p where
     stackPush :: p -> p
     stackPop :: p -> p
 
--- | split of indexable and markable
+-- | 
 -- note if both Stackable and Loopable, the looping index is expected to live on the stack
 class Loopable p where
     loopIndex :: p -> Int
     incrementStackLoopIndex :: p -> p
     resetStackLoopIndex :: p -> p
 
-class Markable p where 
-    mark :: String -> p -> p
+-- | 
+class Markable p a where 
+    mark :: T.Text -> (a->a) -> p -> p
+    read :: T.Text -> p -> a
 
 data TreeState x y where
     TreeState :: (TreeStackInfo x) => TreeStack x -> y -> TreeState x y

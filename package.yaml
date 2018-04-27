@@ -23,6 +23,7 @@ dependencies:
 - lens
 - MonadRandom
 - monadplus
+- text
 
 ghc-options:
 - -Wall
