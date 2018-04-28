@@ -21,7 +21,7 @@ instance TreeState SchoolTreeState
 type ActionType = (Student -> Student)
 
 assignedPronounIs :: Pronoun -> Student -> Bool
-assignedPronounIs p s = preferredPronoun s == p
+assignedPronounIs p s = assignedPronoun s == p
 
 preferredPronounIs :: Pronoun -> Student -> Bool
 preferredPronounIs p s = preferredPronoun s == p

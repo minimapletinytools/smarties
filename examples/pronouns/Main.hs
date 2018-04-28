@@ -23,16 +23,16 @@ type SchoolTreeState = (School, Student)
 type ActionType = (Student -> Student)
 
 assignedPronounIs :: Pronoun -> Student -> Bool
-assignedPronounIs p s = preferredPronoun s == p
+assignedPronounIs p s = assignedPronoun s == p
 
 preferredPronounIs :: Pronoun -> Student -> Bool
 preferredPronounIs p s = preferredPronoun s == p
 
 feminimity :: Student -> Float
-feminimity = (/100.0) . fst . randomR (0.0,100.0) . mkStdGen . (+0) . jeans
+feminimity = fst . randomR (0.0,1.0) . mkStdGen . (+0) . jeans
 
 masculinity :: Student -> Float
-masculinity = (/100.0) . fst . randomR (0.0,100.0) . mkStdGen . (+1) . jeans
+masculinity = fst . randomR (0.0,1.0) . mkStdGen . (+1) . jeans
 
 chromeXX :: Student -> Bool
 chromeXX = (<50) . fst . randomR ((0,100)::(Int,Int)) . mkStdGen . (+2) . jeans
@@ -44,13 +44,13 @@ chromeNeither :: Student -> Bool
 chromeNeither s = not (chromeXX s) && not (chromeXY s)
 
 noneOfTheAbove :: Student -> Float
-noneOfTheAbove = (/100.0) . fst . randomR (0.0,100.0) . mkStdGen . (+3) . jeans
+noneOfTheAbove = fst . randomR (0.0,1.0) . mkStdGen . (+3) . jeans
 
 developer :: Student -> Float
-developer = (/100.0) . fst . randomR (0.0,100.0) . mkStdGen . (+4) . jeans
+developer = fst . randomR (0.0,1.0) . mkStdGen . (+4) . jeans
 
 indecisiveness :: Student -> Float
-indecisiveness = (/100.0) . fst . randomR (0.0,100.0) . mkStdGen . (+5) . jeans
+indecisiveness = fst . randomR (0.0,1.0) . mkStdGen . (+5) . jeans
 
 -- totally cool if she or he keeps it him or herself ;)
 -- for the purpose of this demo, this is determined by the kind of jeans a student wears. This is not true IRL.
@@ -79,11 +79,11 @@ utilityProperty f = fromUtility $
 
 utilityNormalness :: (Student -> Float) -> NodeSequence g SchoolTreeState ActionType Float
 utilityNormalness f = fromUtility $
-    SimpleUtility (\(sc, _) -> (sum . map f $ sc) / (fromIntegral $ length sc))
+    SimpleUtility (\(sc, _) -> (sum (map f sc)) / fromIntegral (length sc))
 
 studentTree :: (RandomGen g) => NodeSequence g SchoolTreeState ActionType Float
 studentTree = utilityWeightedSelector
-    [return . (*0.15) . (+0.01) =<< utilityWeightedSelector 
+    [return . (*0.2) . (+0.01) =<< utilityWeightedSelector 
         [sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty feminimity

@@ -75,6 +75,7 @@ prop_addition_sequence a (NonNegative b) = (reduce os p == a*b) && s == FAIL whe
     (_,p,s,os) = runNodeSequence tree () 0
     tree = do 
         forM_ [0..(b-1)] (\_->addAction a)
+        -- execution should stop here
         result FAIL
         forM_ [0..100] (\_->addAction a)
 

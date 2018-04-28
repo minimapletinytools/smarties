@@ -49,7 +49,7 @@ library:
     - Smarties
 
 executables:
-  smarties-example:
+  notsosmart:
     main:                Main.hs
     source-dirs:         examples/notsosmart
     ghc-options:
@@ -59,7 +59,7 @@ executables:
     dependencies:
     - smarties
 
-  smarties-pronouns:
+  pronouns:
     main:                Main.hs
     source-dirs:         examples/pronouns
     ghc-options:
