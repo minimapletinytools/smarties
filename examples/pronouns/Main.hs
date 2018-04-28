@@ -137,7 +137,7 @@ main = do
         studentfn g s = (g', (foldl (.) id os) s) where
             (g', _, _, os) = runNodeSequence studentTree g (students, s)
         ticktStudents g sts = mapAccumL studentfn g sts
-        loop 0 _ sts = return sts
+        loop (0::Int) _ sts = return sts
         loop n g sts = do 
             let (g', nextsts) = ticktStudents g sts
             putStrLn . show $ (sum . map (toZeroOne . openlyChange) $ nextsts) --  / (fromIntegral $ length nextsts) 
