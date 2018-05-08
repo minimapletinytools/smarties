@@ -22,10 +22,8 @@ module Smarties.Base (
 	getGenerator,
 	setGenerator
 	-- $helperlink
-) where	
-
-import Smarties.TreeState
-
+) where
+    
 import Control.Lens
 import Control.Monad.Random
 import Control.Applicative.Alternative
@@ -57,7 +55,7 @@ runNodeSequence n g p = (\(_,g,p,s,os)->(g,p,s,os)) $ (runNodes n) g p
 
 -- | internal helper
 iterate_ :: Int -> (a -> a) -> a -> a
-iterate_ n f = foldr (.) id (replicate n f) 
+iterate_ n f = foldr (.) id (replicate n f)
 
 -- | run a node sequence several times using its output to generate the next perception state
 runNodeSequenceTimes :: (Reduceable p o) => Int -> NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
@@ -85,7 +83,7 @@ setPerception p' = NodeSequence $ (\g p -> ((), g, p', SUCCESS, []))
 tellOutput :: o -> NodeSequence g p o ()
 tellOutput o = NodeSequence $ (\g p -> ((), g, p, SUCCESS, [o]))
 
--- | returns the generator 
+-- | returns the generator
 getGenerator ::  NodeSequence g p o g
 getGenerator = NodeSequence $ (\g p -> (g, g, p, SUCCESS, []))
 
@@ -98,25 +96,25 @@ setGenerator g = NodeSequence $ (\_ p -> ((), g, p, SUCCESS, []))
 -- helpers for building NodeSequence in Monad land
 
 instance  Functor (NodeSequence g p o) where
-	fmap f n = do 
+	fmap f n = do
 		a <- n
 		return $ f a
 
 instance  Applicative (NodeSequence g p o) where
 	pure a = NodeSequence (\g p -> (a, g, p, SUCCESS, []))
 	-- we should do something naughty here instead of reusing >>=
-	liftA2 f n1 n2 = do 
+	liftA2 f n1 n2 = do
 		a <- n1
 		b <- n2
 		return $ f a b
-		
+
 instance Alternative (NodeSequence g p o) where
 	--empty :: NodeSequence g p o a
 	empty = NodeSequence func where
 		func g p = (error "trying to pull value from a guard", g, p, FAIL, [])
 	a <|> b = a >>= \_ -> b
 
--- | 
+-- |
 -- note this looks a lot like (StateT (g,p) Writer o) but has special functionality built in
 -- note, I'm pretty sure this does not satisfy monad laws
 instance  Monad (NodeSequence g p o) where
@@ -125,24 +123,24 @@ instance  Monad (NodeSequence g p o) where
 	NodeSequence n >>= f = NodeSequence func where
 		-- if we fail, abort the update but pass on the output and state vars
 		-- otherwise keep going
-		func g p = if s == FAIL then (b, g', p, FAIL, os) else keepGoing where 
+		func g p = if s == FAIL then (b, g', p, FAIL, os) else keepGoing where
 			(a, g', p', s, os) = n g p -- run original node, assume it succeded
 			NodeSequence n' = f a -- generate the next node
 			keepGoing = over _5 (++os) (n' g' p') -- run the next node
-			(b,_,_,_,_) = keepGoing	
+			(b,_,_,_,_) = keepGoing
 
 instance (RandomGen g) => MonadRandom (NodeSequence g p o) where
 	--getRandoms = iterate getRandom
     --getRandomRs r = iterate (getRandomR r)
     getRandom = do
     	g <- getGenerator
-    	let 
+    	let
     		(a, g') = random g
     	setGenerator g'
-    	return a    
+    	return a
     getRandomR r = do
     	g <- getGenerator
-    	let 
+    	let
     		(a, g') = randomR r g
     	setGenerator g'
     	return a

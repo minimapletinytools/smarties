@@ -15,7 +15,6 @@ module Smarties.Nodes (
     utilityWeightedSelector,
 
     -- $decoratorlink
-    scope,
     flipResult,
 
     -- $actionlink
@@ -29,7 +28,6 @@ module Smarties.Nodes (
 import           Prelude                         hiding (sequence)
 
 import           Smarties.Base
-import           Smarties.TreeState
 
 import           Control.Applicative.Alternative
 import           Control.Lens
@@ -62,7 +60,7 @@ selector ns = NodeSequence func where
         mapAccumFn acc x = (acc', r) where
             r = (runNodes x) acc p
             (_,acc',_,_,_) = r
-        selected = fromMaybe (error "selector: all children failed",g',p,FAIL,[]) $ 
+        selected = fromMaybe (error "selector: all children failed",g',p,FAIL,[]) $
             find (\(_,_,_,x,_)-> x == SUCCESS) rslts
 
 
@@ -93,8 +91,8 @@ utilitySelector ns = NodeSequence func where
             r = (runNodes x) acc p
             (_,acc',_,_,_) = r
         compfn = (\(a,_,_,_,_)->a)
-        selected = if length ns == 0 
-            then (error "utilitySelector: no children",g',p,FAIL,[]) 
+        selected = if length ns == 0
+            then (error "utilitySelector: no children",g',p,FAIL,[])
             else maximumBy (comparing compfn) rslts
 
 -- |
@@ -113,11 +111,6 @@ utilityWeightedSelector ns = NodeSequence func where
 
 -- $decoratorlink
 -- decorators run a nodesequence and do something with it's results
-
--- | create a new scope
-scope :: (Scopeable p) => NodeSequence g p o a -> NodeSequence g p o a
-scope n = NodeSequence func where
-        func g p = over _3 stackPop $ (runNodes n) g (stackPush p)
 
 -- | decorator that flips the status (FAIL -> SUCCESS, SUCCES -> FAIL)
 flipResult :: NodeSequence g p o a -> NodeSequence g p o a

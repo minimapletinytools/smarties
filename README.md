@@ -2,7 +2,7 @@
 
 Smarties is a general purpose [behavior tree](https://en.wikipedia.org/wiki/Behavior_tree_(artificial_intelligence,_robotics_and_control)) library written in Haskell. The library supports utility AI for advanced decision making. Smarties implements many of the design patterns outlined in this [paper](https://course.ccs.neu.edu/cs5150f13/readings/dill_designpatterns.pdf) and some that aren't.
 
-Behavior trees are written in a DSL built with the **NodeSequence** monad. Monadic return values are used for computing utility.
+Behavior trees are written in a DSL built with the **NodeSequence** monad. Monadic return values are used for computing utility and passing state between nodes.
 
 ## Example
 ```haskell
@@ -17,7 +17,7 @@ data Student = Student {
 
 type School = [Student]
 type SchoolTreeState = (School, Student)
-instance TreeState SchoolTreeState 
+instance TreeState SchoolTreeState
 type ActionType = (Student -> Student)
 
 assignedPronounIs :: Pronoun -> Student -> Bool
@@ -49,7 +49,7 @@ The first part of the code outlines the state vars that we want operate with/on 
 
 ```haskell
 actionChangePronoun :: Pronoun -> NodeSequence g SchoolTreeState ActionType ()
-actionChangePronoun p = fromAction $ 
+actionChangePronoun p = fromAction $
     SimpleAction (\_ -> (\(Student a _ _ d) -> Student a p True d))
 
 actionChangeBack :: NodeSequence g SchoolTreeState ActionType ()
@@ -74,33 +74,33 @@ Next we create several NodeSequences which will be the building blocks for our b
 ```haskell
 studentTree :: (RandomGen g) => NodeSequence g SchoolTreeState ActionType Float
 studentTree = utilityWeightedSelector
-    [return . (*0.15) . (+0.01) =<< utilityWeightedSelector 
+    [return . (*0.15) . (+0.01) =<< utilityWeightedSelector
         [sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty feminimity
             actionChangePronoun SheHer
-            return $ a * b 
+            return $ a * b
         ,sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty masculinity
             actionChangePronoun HeHim
-            return $ a * b 
+            return $ a * b
         ,sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty developer
             actionChangePronoun FooBar
-            return $ a * b 
+            return $ a * b
         ,sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty noneOfTheAbove
             actionChangePronoun Other
-            return $ a * b 
+            return $ a * b
         ,sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             m <- utilityProperty masculinity
             f <- utilityProperty feminimity
             actionChangePronoun TheyThem
-            return $ a * ((1.0-m)+(1.0-f)) / 2.0 
+            return $ a * ((1.0-m)+(1.0-f)) / 2.0
         ]
     ,sequence $ do
         a <- utilityProperty indecisiveness
@@ -108,7 +108,7 @@ studentTree = utilityWeightedSelector
         return $ 0.01 * a
     ,sequence $ do
         a <- utilityNormalness ((1-) . toZeroOne . openlyChange)
-        result SUCCESS 
+        result SUCCESS
         return a
     ]
 ```
@@ -118,12 +118,12 @@ Using our NodeSequences, we define the tree itself. Note that **sequence $ do** 
 ```haskell
 makeStudent :: (RandomGen g) => Rand g Student
 makeStudent = do
-	(isFemale::Bool) <- getRandom 
+	(isFemale::Bool) <- getRandom
 	(sJeans::Int) <- getRandom
-	let 
+	let
 		pronoun = if isFemale then SheHer else HeHim
 	return $ Student pronoun pronoun False sJeans
-        
+
 main :: IO ()
 main = do
 	stdgen <- getStdGen
@@ -134,7 +134,7 @@ main = do
 			(rslt, (BasicTreeState _ g'), o) = tickTree tree $ BasicTreeState (students, s) g
 		ticktStudents sts = snd $ mapAccumL studentfn stdgen sts
 		loop 0 sts = return ()
-		loop n sts = do 
+		loop n sts = do
 			let
 				nextsts = ticktStudents sts
 			putStrLn . show $ nextsts
@@ -142,12 +142,12 @@ main = do
 	loop 365 students
 ```
 
-Finally, we run the tree and output the results :D. 
+Finally, we run the tree and output the results :D.
 
 ## Terminology
 
 - **perception**: input and computation state of the behavior tree. Named perception because it represents how the tree perceives the outside world. **perception** is not mutable when executing the tree and can be used to carry computation state. It is possible to modify the input portion of the **perception**. This is only recommended in the special case where the input state is same as what the tree is operating on as a whole in which case the tree represents a sequential set of operations on a value. e.g. **NodeSequnce g Int (Int->Int)** represents operations on an Int value. In these cases, ensure the **Reduceable p o** constraint is satisfied and use **SelfAction** which is the same as **Action** except also applies the output to the perception.
-- **seqence**: control node that executes each child node in sequence until it hits a FAIL node and collects all output. 
+- **seqence**: control node that executes each child node in sequence until it hits a FAIL node and collects all output.
 - **selector**: control node that executes the first SUCCESS node.
 - **utility**: optional monadic output for a node that can be used for more complex control flow. For example **utilitySelector** executes the node that has the largest utility.
 
@@ -169,57 +169,27 @@ The sequence represents a computation that takes a generator and perception and 
 - **Status**: Status of executing NodeSequence, either **SUCCESS** or **FAIL**
 - **o**: output type
 
-**NodeSequence** looks a lot like **Statet (p,g) Writer [o]** except with an addition Status output. The difference lies that with each **>>=** if the input computation has Status FAIL, the monad will stop passing on **p** and appending to **[o]**. It will continue to pass through **g** and evaluate **a**. Thus running **NodeSequence** produces an **a** and two thunks representing the collected state and output of the represented sequence up until the first **FAIL**. These thunks may or may not be evaluated depending on the decisions made by the parent nodes. 
+**NodeSequence** looks a lot like **Statet (p,g) Writer [o]** except with an addition Status output. The difference lies that with each **>>=** if the input computation has Status FAIL, the monad will stop passing on **p** and appending to **[o]**. It will continue to pass through **g** and evaluate **a**. Thus running **NodeSequence** produces an **a** and two thunks representing the collected state and output of the represented sequence up until the first **FAIL**. These thunks may or may not be evaluated depending on the decisions made by the parent nodes.
 
-## Advanced features
-
-- Nodes can modify perception for future nodes to operate on. For example, lets say each student in our example has a best friend and a crush. These students _their_ friends/crushes strongly strongly influence the student's decision to change pronouns. Also apologies for very subtly suggesting that monogamy is the only option... Naively approaching this, we may find ourselves creating several nodes:
+In the example above, the monadic return values are used only for computing utility. This value is useful for passing general information between nodes. Another common usage pattern is for implementing loops. For example:
 
 ```haskell
-conditionBestFriendFoo = ... 
-conditionWorstFriendFoo = ...
-conditionBestFriendOfBestFriendFoo = ...
-conditionBestFriendOfWorstFriendFoo = ...
-```
-
-instead, we can mark students in our tree's computation state allowing us to structure our nodes as such:
-
-```haskell
-markSelf = ...
-markBestFriendOfMarkedStudent = ...
-markCrushOfMarkedStudent = ...
-conditionMarkedStudentFoo = ...
-```
-
-allowing nodes to change the computation context of future nodes. This is both more general and signficantly reduces the amount of needed nodes for creating more complex computation spaces. It is suggested that your perception type implements **Scopeable** if you want to do this. Scopeable creates a scoping behavior for the computational variables. **(TreeStackInfo x) => TreeState x y** offers a default implementation of this where x is the scopeable computational state and y is the (not actually immutable) input state. Scopes must be explicitly created using the **scope** decorator. For example:
-
-```haskell
-sequence $ do
-    selectSomething -- (1)
-    doSomethingToSelection
-    scope $ sequence $ do
-        selectSomethingElse -- (2)
-        conditionSelectedHasProperty
-        doSomethingToSelection -- operates on (2)
-    doSomethingToSelection -- operates on (1)
-    -- 
+crushCliqueFemininity = sequence $ do
+	x <- findCrush
+	n <- numberStudentsAround x
+	clique <- forM [0..(n-1)] (\n' -> do
+		s <- getStudentAround x n'
+		return feminimity s
+		)
+	return (mean clique)
 ```
 
 ## Roadmap: <a id="missing"></a>
 
-- There is **class Loopable** but there are no supporting control nodes. A looping index makes our language turing complete :). Besides good feels though, the main use of this is for code reuse. For example:
+- Modelling history patterns is challenging here since the tree produces no side effects. In a previous implementation I could have added a **get/setZipper** method to **TreeState** tracking which node we are at and nodes can manage their records in the state. Currently, as sequences are represented as monads, one could add a monadic if/else that would not be possible to track :(. The current solution is to add **markOnExecution :: (Markable p) => String -> NodeSequence g p o ()** and leave the tracking to the user.
 
-```haskell
-	scope $ selectorForEach $ do
-		selectNthSquare
-		i <- getSelection
-		guard $ i `mod` 2 == 0
-		colorSelectedSquare
-```
-
-- Modelling history patterns is challenging here since the tree produces no side effects. In a previous implementation I could have added a **get/setZipper** method to **TreeState** tracking which node we are at and nodes can manage their records in the state. Currently, as sequences are represented as monads, one could add a monadic if/else that would not be possible to track :(. The current solution is to add **markOnExecution :: (Markable p) => String -> NodeSequence g p o ()** and leave the tracking to the user. 
+- I'm considering removing the **TreeState** type class constraint all together and making the tree entirely stateless. Instead, monadic return values should be the only method for passing information between nodes.
 
 - Support for [Statistic.Distribution.Normal](https://hackage.haskell.org/package/statistics-0.14.0.2/docs/Statistics-Distribution-Normal.html) for modelling risk reward.
 
-- The next version will probably promote **NodeSequence** to **NodeSequenceT**. ~~Also considering using the **RandT** monad instead of reimplementing it in **NodeSequence** as it is right now.~~ 
-
+- The next version will probably promote **NodeSequence** to **NodeSequenceT**. This will be useful if, for example, there is state info stored in a mutable type. ~~Also considering using the **RandT** monad instead of reimplementing it in **NodeSequence** as it is right now.~~

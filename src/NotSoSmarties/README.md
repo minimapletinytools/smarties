@@ -1,6 +1,6 @@
 # NotSoSmarties
 
-## This module is the old design and left here for reference. This module in the near future. Documentation for this module follows:
+## This module is the old design and left here for my own reference. This module will be DELETED in the near future. Below is the old documentation:
 
 Smarties is a general purpose [behavior tree](https://en.wikipedia.org/wiki/Behavior_tree_(artificial_intelligence,_robotics_and_control)) library written in Haskell. Smarties supports utility computation functions within the trees for advanced decision making. Smarties implements many of the design patterns outlined in this [paper](https://course.ccs.neu.edu/cs5150f13/readings/dill_designpatterns.pdf) and probably some that aren't.
 

@@ -2,11 +2,9 @@ module Smarties (
     module Smarties.Base,
     module Smarties.Nodes,
     module Smarties.Builders,
-    module Smarties.TreeState
 ) where
 
 import Smarties.Base
-import Smarties.TreeState
 import Smarties.Nodes
 import Smarties.Builders
 
