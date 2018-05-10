@@ -45,7 +45,7 @@ import Debug.Trace (trace)
 
 -- | intended use is "sequence $ do"
 -- This is prefered over just "do" as it's more explicit.
-sequence :: NodeSequence g p o a -> NodeSequence g p o a
+sequence :: NodeSequenceT g p o m a -> NodeSequenceT g p o m a
 sequence = id
 
 
@@ -53,7 +53,7 @@ sequence = id
 -- |
 -- TODO replace with mapAccumL because need to accumulate p and g
 -- you can think of selector as something along the lines of (dropWhile SUCCESS . take 1)
-selector :: [NodeSequence g p o a] -> NodeSequence g p o a
+selector :: [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
 selector ns = NodeSequence func where
     func g p = selected where
         (g',rslts) = mapAccumL mapAccumFn g ns
@@ -76,14 +76,14 @@ weightedSelection g ns = if total /= 0 then r else weightedSelection g (zip ([0.
         Nothing    -> (Nothing, g')
 
 -- |
-weightedSelector :: (RandomGen g, Ord w, Num w, Random w) => [(w, NodeSequence g p o a)] -> NodeSequence g p o a
+weightedSelector :: (RandomGen g, Ord w, Num w, Random w) => [(w, NodeSequenceT g p o m a)] -> NodeSequenceT g p o m a
 weightedSelector ns = NodeSequence func where
     func g p = (runNodes selectedNode) g' p where
         (msn, g') = weightedSelection g ns
         selectedNode = fromMaybe empty msn
 
 -- |
-utilitySelector :: (Ord a) => [NodeSequence g p o a] -> NodeSequence g p o a
+utilitySelector :: (Ord a) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
 utilitySelector ns = NodeSequence func where
     func g p = selected where
         (g',rslts) = mapAccumL mapAccumFn g ns
@@ -96,7 +96,7 @@ utilitySelector ns = NodeSequence func where
             else maximumBy (comparing compfn) rslts
 
 -- |
-utilityWeightedSelector :: (RandomGen g, Random a, Num a, Ord a) => [NodeSequence g p o a] -> NodeSequence g p o a
+utilityWeightedSelector :: (RandomGen g, Random a, Num a, Ord a) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
 utilityWeightedSelector ns = NodeSequence func where
     func g p = selected where
         (g',rslts) = mapAccumL mapAccumFn g ns
@@ -113,7 +113,7 @@ utilityWeightedSelector ns = NodeSequence func where
 -- decorators run a nodesequence and do something with it's results
 
 -- | decorator that flips the status (FAIL -> SUCCESS, SUCCES -> FAIL)
-flipResult :: NodeSequence g p o a -> NodeSequence g p o a
+flipResult :: NodeSequenceT g p o m a -> NodeSequenceT g p o m a
 flipResult n = NodeSequence func where
         func g p = over _4 flipr $ (runNodes n) g p
         flipr s = if s == SUCCESS then FAIL else SUCCESS

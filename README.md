@@ -158,7 +158,7 @@ Finally, we run the tree and output the results :D.
 **NodeSequence** has the following definition
 
 ```haskell
-data NodeSequence g p o a =  NodeSequence { runNodes :: g -> p -> (a, g, p, Status, [o]) }
+data NodeSequenceT g p o m a =  NodeSequence { runNodes :: g -> p -> (a, g, p, Status, [o]) }
 ```
 
 The sequence represents a computation that takes a generator and perception and returns an output with the following types:
@@ -186,9 +186,7 @@ crushCliqueFemininity = sequence $ do
 
 ## Roadmap: <a id="missing"></a>
 
-- Modelling history patterns is challenging here since the tree produces no side effects. In a previous implementation I could have added a **get/setZipper** method to **TreeState** tracking which node we are at and nodes can manage their records in the state. Currently, as sequences are represented as monads, one could add a monadic if/else that would not be possible to track :(. The current solution is to add **markOnExecution :: (Markable p) => String -> NodeSequence g p o ()** and leave the tracking to the user.
-
-- I'm considering removing the **TreeState** type class constraint all together and making the tree entirely stateless. Instead, monadic return values should be the only method for passing information between nodes.
+- Modelling history patterns is challenging here since the tree produces no side effects. In a previous implementation I could have added a **get/setZipper** methods to a typeclass constraint on the **perception** type. Currently, as sequences are represented as monads, one could add a monadic if/else that would not be possible to track :(. The current solution is to add something like **markOnExecution :: (Markable p) => String -> NodeSequence g p o ()** and leave the tracking to the user.
 
 - Support for [Statistic.Distribution.Normal](https://hackage.haskell.org/package/statistics-0.14.0.2/docs/Statistics-Distribution-Normal.html) for modelling risk reward.
 
