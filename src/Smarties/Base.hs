@@ -80,7 +80,7 @@ execNodeSequence :: NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
 execNodeSequence n g p = runIdentity $ execNodeSequenceT n g p
 
 -- |
-execNodeSequenceTimes :: (Reduceable p o) => Int -> NodeSequence g p o a -> g -> p -> m (g, p, Status, [o])
+execNodeSequenceTimes :: (Reduceable p o) => Int -> NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
 execNodeSequenceTimes num n g p = runIdentity $ execNodeSequenceTimesT num n g p
 
 -- |

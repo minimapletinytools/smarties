@@ -62,7 +62,7 @@ toZeroOne :: Bool -> Float
 toZeroOne x = if x then 1.0 else 0.0
 
 actionChangePronoun :: Pronoun -> NodeSequence g SchoolTreeState ActionType ()
-actionChangePronoun p = fromAction $ 
+actionChangePronoun p = fromAction $
     SimpleAction (\_ -> (\(Student a _ _ d) -> Student a p True d))
 
 actionChangeBack :: NodeSequence g SchoolTreeState ActionType ()
@@ -83,33 +83,33 @@ utilityNormalness f = fromUtility $
 
 studentTree :: (RandomGen g) => NodeSequence g SchoolTreeState ActionType Float
 studentTree = utilityWeightedSelector
-    [return . (*0.2) . (+0.01) =<< utilityWeightedSelector 
+    [return . (*0.2) . (+0.01) =<< utilityWeightedSelector
         [sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty feminimity
             actionChangePronoun SheHer
-            return $ a * b 
+            return $ a * b
         ,sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty masculinity
             actionChangePronoun HeHim
-            return $ a * b 
+            return $ a * b
         ,sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty developer
             actionChangePronoun FooBar
-            return $ a * b 
+            return $ a * b
         ,sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty noneOfTheAbove
             actionChangePronoun Other
-            return $ a * b 
+            return $ a * b
         ,sequence $ do
             a <- utilityNormalness (toZeroOne . openlyChange)
             m <- utilityProperty masculinity
             f <- utilityProperty feminimity
             actionChangePronoun TheyThem
-            return $ a * ((1.0-m)+(1.0-f)) / 2.0 
+            return $ a * ((1.0-m)+(1.0-f)) / 2.0
         ]
     ,sequence $ do
         a <- utilityProperty indecisiveness
@@ -117,30 +117,30 @@ studentTree = utilityWeightedSelector
         return $ 0.01 * a
     ,sequence $ do
         a <- utilityNormalness ((1-) . toZeroOne . openlyChange)
-        result SUCCESS 
+        result SUCCESS
         return a
     ]
 
 makeStudent :: (RandomGen g) => Rand g Student
 makeStudent = do
     (sJeans::Int) <- getRandom
-    (isFemale::Bool) <- getRandom 
-    let 
+    (isFemale::Bool) <- getRandom
+    let
         pronoun = if isFemale then SheHer else HeHim
     return $ Student pronoun pronoun False sJeans
-        
+
 main :: IO ()
 main = do
     stdgen <- getStdGen
     students <- replicateM 100 $ evalRandIO makeStudent
     let
         studentfn g s = (g', (foldl (.) id os) s) where
-            (g', _, _, os) = runNodeSequence studentTree g (students, s)
+            (g', _, _, os) = execNodeSequence studentTree g (students, s)
         ticktStudents g sts = mapAccumL studentfn g sts
         loop (0::Int) _ sts = return sts
-        loop n g sts = do 
+        loop n g sts = do
             let (g', nextsts) = ticktStudents g sts
-            putStrLn . show $ (sum . map (toZeroOne . openlyChange) $ nextsts) --  / (fromIntegral $ length nextsts) 
+            putStrLn . show $ (sum . map (toZeroOne . openlyChange) $ nextsts) --  / (fromIntegral $ length nextsts)
             loop (n-1) g' nextsts
     sts <- loop 365 stdgen students
     putStrLn $ intercalate "\n" $ map (\s -> show (preferredPronoun s) ++ " " ++ show (assignedPronoun s) ++ " " ++ show (openlyChange s)) sts
