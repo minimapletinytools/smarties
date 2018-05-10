@@ -24,7 +24,7 @@ import           Smarties.Base
 
 
 -- $helper1link
--- helpers for building NodeSequence out of functions
+-- helpers for building NodeSequenceT out of functions
 
 -- | Utility return utility only
 data Utility g p a where
@@ -52,45 +52,45 @@ data SelfAction g p o where
     SelfAction :: (Reduceable p o) => (g -> p -> (g, o)) -> SelfAction g p o
     SimpleSelfAction :: (Reduceable p o) => (p -> o) -> SelfAction g p o
 
-fromUtility :: Utility g p a -> NodeSequenceT g p o m a
-fromUtility n = NodeSequence $ case n of
+fromUtility :: (Monad m) => Utility g p a -> NodeSequenceT g p o m a
+fromUtility n = NodeSequenceT $ case n of
     Utility f -> func f
     SimpleUtility f -> func (\g p -> (f p, g))
     where
-        func f g p = (a, g', p, SUCCESS, []) where
+        func f g p = return (a, g', p, SUCCESS, []) where
             (a, g') = f g p
 
-fromPerception :: Perception g p -> NodeSequence g p o ()
-fromPerception n = NodeSequence $ case n of
+fromPerception :: (Monad m) => Perception g p -> NodeSequenceT g p o m ()
+fromPerception n = NodeSequenceT $ case n of
     Perception f -> func f
     SimplePerception f -> func (\g p -> (g, f p))
     ConditionalPerception f -> cfunc f
     where
-        func f g p = ((), g', p', SUCCESS, []) where
+        func f g p = return ((), g', p', SUCCESS, []) where
             (g', p') = f g p
-        cfunc f g p = ((), g', p', if b then SUCCESS else FAIL, []) where
+        cfunc f g p = return ((), g', p', if b then SUCCESS else FAIL, []) where
             (b, g', p') = f g p
 
-fromCondition :: Condition g p -> NodeSequence g p o ()
-fromCondition n = NodeSequence $ case n of
+fromCondition :: (Monad m) => Condition g p -> NodeSequenceT g p o m ()
+fromCondition n = NodeSequenceT $ case n of
     Condition f -> func f
     SimpleCondition f -> func (\g p -> (f p, g))
     where
-        func f g p = ((), g', p, if b then SUCCESS else FAIL, []) where
+        func f g p = return ((), g', p, if b then SUCCESS else FAIL, []) where
             (b, g') = f g p
 
-fromAction :: Action g p o -> NodeSequence g p o ()
-fromAction n = NodeSequence $ case n of
+fromAction :: (Monad m) => Action g p o -> NodeSequenceT g p o m ()
+fromAction n = NodeSequenceT $ case n of
     Action f -> func f
     SimpleAction f -> func (\g p -> (g, f p))
     where
-        func f g p = ((), g', p, SUCCESS, [o]) where
+        func f g p = return ((), g', p, SUCCESS, [o]) where
             (g', o) = f g p
 
-fromSelfAction :: SelfAction g p o -> NodeSequence g p o ()
-fromSelfAction n = NodeSequence $ case n of
+fromSelfAction :: (Monad m) => SelfAction g p o -> NodeSequenceT g p o m ()
+fromSelfAction n = NodeSequenceT $ case n of
     SelfAction f -> func f
     SimpleSelfAction f -> func (\g p -> (g, f p))
     where
-        func f g p = ((), g', reduce [o] p, SUCCESS, [o]) where
+        func f g p = return ((), g', reduce [o] p, SUCCESS, [o]) where
             (g', o) = f g p
