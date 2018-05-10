@@ -16,6 +16,10 @@ module Smarties.Base (
     execNodeSequenceT,
     execNodeSequenceTimesT,
     execNodeSequenceTimesFinalizeT,
+    NodeSequence(..),
+    execNodeSequence,
+    execNodeSequenceTimes,
+    execNodeSequenceTimesFinalize,
     getPerception,
     setPerception,
     tellOutput,
@@ -46,10 +50,7 @@ instance Reduceable a (a->a) where
 data Status = SUCCESS | FAIL deriving (Eq, Show)
 
 -- |
--- TODO add a (scope :: Bool) input parameter
 newtype NodeSequenceT g p o m a =  NodeSequenceT { runNodes :: g -> p -> m (a, g, p, Status, [o]) }
-
-type NodeSequence g p o a = NodeSequenceT g p o Identity a
 
 -- | run a node sequence tossing its monadic output
 -- output is ordered from RIGHT to LEFT i.e. foldr when applying
@@ -71,6 +72,20 @@ execNodeSequenceTimesFinalizeT num n _g _p = do
     (_,p,_,os) <- execNodeSequenceTimesT num n _g _p
     return $ reduce os p
 
+-- | non transformer type
+type NodeSequence g p o a = NodeSequenceT g p o Identity a
+
+-- |
+execNodeSequence :: NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
+execNodeSequence n g p = runIdentity $ execNodeSequenceT n g p
+
+-- |
+execNodeSequenceTimes :: (Reduceable p o) => Int -> NodeSequence g p o a -> g -> p -> m (g, p, Status, [o])
+execNodeSequenceTimes num n g p = runIdentity $ execNodeSequenceTimesT num n g p
+
+-- |
+execNodeSequenceTimesFinalize :: (Reduceable p o) => Int -> NodeSequence g p o a -> g -> p -> p
+execNodeSequenceTimesFinalize num n g p = runIdentity $ execNodeSequenceTimesFinalizeT num n g p
 
 -- $helperlink
 -- helpers for building NodeSequence in Monad land
