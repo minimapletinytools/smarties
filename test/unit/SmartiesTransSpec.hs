@@ -1,7 +1,10 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module SmartiesSpec where
+-- NOTE these tests are almost identical to the ones in SmartiesSpec
+-- I wish there was a nice way to reuse code here :\
+
+module SmartiesTransSpec where
 
 import Prelude hiding (sequence)
 
@@ -13,7 +16,7 @@ import Data.Maybe (fromMaybe)
 import Control.Monad (liftM, liftM2, replicateM, forM_)
 import Control.Monad.Identity (runIdentity)
 
-import Smarties
+import Smarties.Trans
 
 data BranchType = BrSelector | BrSequence | BrNot deriving (Show)
 
@@ -47,7 +50,7 @@ addAction n = fromAction $ SimpleAction (\_ -> (+n))
 prop_selector_basic :: Bool -> Bool
 prop_selector_basic b = let
     tree = selector [result FAIL, result FAIL, result FAIL, result FAIL, result FAIL, result FAIL, result FAIL, result (if b then SUCCESS else FAIL)]
-    (_,_,_,s,_) = (runNodes tree) () ()
+    (_,_,_,s,_) = runIdentity $ (runNodes tree) () ()
     in if b then s == SUCCESS else s == FAIL
 
 -- prop_weightedSelector :: Bool

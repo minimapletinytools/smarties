@@ -47,6 +47,7 @@ library:
   exposed-modules:
     - NotSoSmarties
     - Smarties
+    - Smarties.Trans
 
 executables:
   notsosmart:
