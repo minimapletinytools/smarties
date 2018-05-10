@@ -49,18 +49,26 @@ sequence :: NodeSequenceT g p o m a -> NodeSequenceT g p o m a
 sequence = id
 
 
+mapAccumRM :: (Monad m) => (acc -> x -> m (acc, y)) -> acc -> [x] -> m (acc, [y])
+mapAccumRM f acc_ xs = foldr mapAccumM_ (return (acc_, [])) xs where
+    mapAccumM_ x prev = do
+        (acc, ys) <- prev
+        (acc', y) <- f acc x
+        return (acc', ys ++ [y])
 
--- |
--- TODO replace with mapAccumL because need to accumulate p and g
+mapAccumNodeSequenceT :: (Monad m) => p -> g -> NodeSequenceT g p o m a -> m (g, (a, g, p, Status, [o]))
+mapAccumNodeSequenceT p acc x = do
+    r <- (runNodes x) acc p
+    let (_,acc',_,_,_) = r
+    return (acc', r)
+
+
 -- you can think of selector as something along the lines of (dropWhile SUCCESS . take 1)
-selector :: [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
-selector ns = NodeSequence func where
-    func g p = selected where
-        (g',rslts) = mapAccumL mapAccumFn g ns
-        mapAccumFn acc x = (acc', r) where
-            r = (runNodes x) acc p
-            (_,acc',_,_,_) = r
-        selected = fromMaybe (error "selector: all children failed",g',p,FAIL,[]) $
+selector :: (Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
+selector ns = NodeSequenceT func where
+    func g p = do
+        (g', rslts) <- mapAccumRM (mapAccumNodeSequenceT p) g ns
+        return $ fromMaybe (error "selector: all children failed",g',p,FAIL,[]) $
             find (\(_,_,_,x,_)-> x == SUCCESS) rslts
 
 
@@ -76,59 +84,57 @@ weightedSelection g ns = if total /= 0 then r else weightedSelection g (zip ([0.
         Nothing    -> (Nothing, g')
 
 -- |
-weightedSelector :: (RandomGen g, Ord w, Num w, Random w) => [(w, NodeSequenceT g p o m a)] -> NodeSequenceT g p o m a
-weightedSelector ns = NodeSequence func where
+weightedSelector :: (RandomGen g, Ord w, Num w, Random w, Monad m) => [(w, NodeSequenceT g p o m a)] -> NodeSequenceT g p o m a
+weightedSelector ns = NodeSequenceT func where
     func g p = (runNodes selectedNode) g' p where
         (msn, g') = weightedSelection g ns
         selectedNode = fromMaybe empty msn
 
 -- |
-utilitySelector :: (Ord a) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
-utilitySelector ns = NodeSequence func where
-    func g p = selected where
-        (g',rslts) = mapAccumL mapAccumFn g ns
-        mapAccumFn acc x = (acc', r) where
-            r = (runNodes x) acc p
-            (_,acc',_,_,_) = r
-        compfn = (\(a,_,_,_,_)->a)
-        selected = if length ns == 0
-            then (error "utilitySelector: no children",g',p,FAIL,[])
-            else maximumBy (comparing compfn) rslts
+utilitySelector :: (Ord a, Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
+utilitySelector ns = NodeSequenceT func where
+    func g p = do
+        (g', rslts) <- mapAccumRM (mapAccumNodeSequenceT p) g ns
+        let compfn = (\(a,_,_,_,_)->a)
+        if length ns == 0
+            then return (error "utilitySelector: no children",g',p,FAIL,[])
+            else return $ maximumBy (comparing compfn) rslts
 
 -- |
-utilityWeightedSelector :: (RandomGen g, Random a, Num a, Ord a) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
-utilityWeightedSelector ns = NodeSequence func where
-    func g p = selected where
-        (g',rslts) = mapAccumL mapAccumFn g ns
-        mapAccumFn acc x = (acc', r) where
-            r = (runNodes x) acc p
-            (_,acc',_,_,_) = r
-        compelt = (\(a,_,_,_,_)->a)
-        (selected', g'') = weightedSelection g' $ map (\x-> (compelt x, x)) rslts
-        selected = fromMaybe (error "utilityWeightedSelector: no children",g'',p,FAIL,[]) $ do
-            n <- selected'
-            return $ set _2 g'' n
+utilityWeightedSelector :: (RandomGen g, Random a, Num a, Ord a, Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
+utilityWeightedSelector ns = NodeSequenceT func where
+    func g p = do
+        (g', rslts) <- mapAccumRM (mapAccumNodeSequenceT p) g ns
+        let
+            compelt = (\(a,_,_,_,_)->a)
+            (selected', g'') = weightedSelection g' $ map (\x-> (compelt x, x)) rslts
+        return $ fromMaybe (error "utilityWeightedSelector: no children",g'',p,FAIL,[]) $ do
+                n <- selected'
+                return $ set _2 g'' n
 
 -- $decoratorlink
 -- decorators run a nodesequence and do something with it's results
 
 -- | decorator that flips the status (FAIL -> SUCCESS, SUCCES -> FAIL)
-flipResult :: NodeSequenceT g p o m a -> NodeSequenceT g p o m a
-flipResult n = NodeSequence func where
-        func g p = over _4 flipr $ (runNodes n) g p
+flipResult :: (Monad m) => NodeSequenceT g p o m a -> NodeSequenceT g p o m a
+flipResult n = NodeSequenceT func where
         flipr s = if s == SUCCESS then FAIL else SUCCESS
+        func g p = do
+            rslt <- (runNodes n) g p
+            return $ over _4 flipr rslt
+
 
 -- $actionlink
 -- actions
 -- | has given status
-result :: Status -> NodeSequence g p o ()
-result s = NodeSequence (\g p -> ((), g, p, s, []))
+result :: (Monad m) => Status -> NodeSequenceT g p o m ()
+result s = NodeSequenceT (\g p -> return ((), g, p, s, []))
 
 -- $conditionlink
 -- conditions
 -- | has random status based on supplied chance
-rand :: (RandomGen g) => Float -- ^ chance of success ∈ [0,1]
-    -> NodeSequence g p o ()
+rand :: (RandomGen g, Monad m) => Float -- ^ chance of success ∈ [0,1]
+    -> NodeSequenceT g p o m ()
 rand rn = do
     r <- getRandomR (0,1)
     guard (r > rn)
