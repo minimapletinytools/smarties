@@ -72,7 +72,9 @@ execNodeSequenceTimesFinalizeT num n _g _p = do
     (_,p,_,os) <- execNodeSequenceTimesT num n _g _p
     return $ reduce os p
 
--- | non transformer type
+-- $nontransformerlink
+
+-- | has the exact same interface as the one in Smarties.Base 
 type NodeSequence g p o a = NodeSequenceT g p o Identity a
 
 -- |
