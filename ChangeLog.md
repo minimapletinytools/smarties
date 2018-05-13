@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 ### Added
 - Added Smarties.Trans containing Monad Transformer variant NodeSequenceT. Currently as separate module for performance reasons. I still have to do side by side benchmarks but I'm pretty sure it's a substantial performance hit especially due to all the extra wrapping/unwrapping that happens in selector nodes.
+- Added UtilityT in Smarties.Trans.Builders will be added the rest soon.
+- Utility type no longer requires Num/Ord constraints, these are enforced by the selectors that use them.
 
 ## [1.0.2] - 2018-05-08
 ### Added

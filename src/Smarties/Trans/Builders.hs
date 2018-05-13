@@ -31,16 +31,16 @@ import           Smarties.Trans.Base
 
 -- | Transformer variant
 data UtilityT g p m a where
-    UtilityT :: (Monad m, Num a, Ord a) => (g -> p -> m (a, g)) -> UtilityT g p m a
-    SimpleUtilityT :: (Monad m, Num a, Ord a) => (p -> m a) -> UtilityT g p m a
+    UtilityT :: (Monad m) => (g -> p -> m (a, g)) -> UtilityT g p m a
+    SimpleUtilityT :: (Monad m) => (p -> m a) -> UtilityT g p m a
 
 -- | Utility return utility only
 -- we don't do
 -- type Utility g p a = UtilityT g p Identity a
 -- because we want to maintain interface compatability with Smarties
 data Utility g p a where
-    Utility :: (Num a, Ord a) => (g -> p -> (a, g)) -> Utility g p a
-    SimpleUtility :: (Num a, Ord a) => (p -> a) -> Utility g p a
+    Utility :: (g -> p -> (a, g)) -> Utility g p a
+    SimpleUtility :: (p -> a) -> Utility g p a
 
 -- | Perception modify pereption only
 data Perception g p where
