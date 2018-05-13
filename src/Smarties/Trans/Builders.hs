@@ -9,11 +9,13 @@ Stability   : experimental
 module Smarties.Trans.Builders (
     -- $helper1link
     Utility(..),
+    UtilityT(..),
     Perception(..),
     Action(..),
     Condition(..),
     SelfAction(..),
     fromUtility,
+    fromUtilityT,
     fromPerception,
     fromCondition,
     fromAction,
@@ -26,7 +28,16 @@ import           Smarties.Trans.Base
 -- $helper1link
 -- helpers for building NodeSequenceT out of functions
 
+
+-- | Transformer variant
+data UtilityT g p m a where
+    UtilityT :: (Monad m, Num a, Ord a) => (g -> p -> m (a, g)) -> UtilityT g p m a
+    SimpleUtilityT :: (Monad m, Num a, Ord a) => (p -> m a) -> UtilityT g p m a
+
 -- | Utility return utility only
+-- we don't do
+-- type Utility g p a = UtilityT g p Identity a
+-- because we want to maintain interface compatability with Smarties
 data Utility g p a where
     Utility :: (Num a, Ord a) => (g -> p -> (a, g)) -> Utility g p a
     SimpleUtility :: (Num a, Ord a) => (p -> a) -> Utility g p a
@@ -52,13 +63,27 @@ data SelfAction g p o where
     SelfAction :: (Reduceable p o) => (g -> p -> (g, o)) -> SelfAction g p o
     SimpleSelfAction :: (Reduceable p o) => (p -> o) -> SelfAction g p o
 
-fromUtility :: (Monad m) => Utility g p a -> NodeSequenceT g p o m a
+fromUtilityT :: (Monad m) => UtilityT g p m a -> NodeSequenceT g p o m a
+fromUtilityT n = NodeSequenceT $ case n of
+    UtilityT f -> func f
+    SimpleUtilityT f -> func (\g p -> f p >>= \x -> return (x,g))
+    where
+        func f g p = do
+            (a, g') <- f g p
+            return (a, g', p, SUCCESS, [])
+
+{-fromUtility :: (Monad m) => Utility g p m a -> NodeSequenceT g p o m a
 fromUtility n = NodeSequenceT $ case n of
     Utility f -> func f
     SimpleUtility f -> func (\g p -> (f p, g))
     where
         func f g p = return (a, g', p, SUCCESS, []) where
-            (a, g') = f g p
+            (a, g') = f g p-}
+
+fromUtility :: (Monad m) => Utility g p a -> NodeSequenceT g p o m a
+fromUtility n = case n of
+    Utility f -> fromUtilityT $ UtilityT (\g p -> return $ f g p)
+    SimpleUtility f -> fromUtilityT $ SimpleUtilityT (\p -> return $ f p)
 
 fromPerception :: (Monad m) => Perception g p -> NodeSequenceT g p o m ()
 fromPerception n = NodeSequenceT $ case n of
