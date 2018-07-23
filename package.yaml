@@ -70,7 +70,7 @@ executables:
     dependencies:
     - smarties
 
-  pronouns:
+  tutorial:
     main:                Main.hs
     source-dirs:         examples/tutorial
     ghc-options:
@@ -81,6 +81,7 @@ executables:
     - smarties
     - ilist
     - vector
+    - haskeline
 
 
 tests:
