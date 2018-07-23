@@ -8,7 +8,7 @@ Stability   : experimental
 -}
 module Smarties.Trans.Nodes (
     -- $controllink
-    sequence,
+    --sequence,
     selector,
     weightedSelector,
     utilitySelector,
@@ -43,8 +43,8 @@ import           Data.Ord                        (comparing)
 
 -- | intended use is "sequence $ do"
 -- This is prefered over just "do" as it's more explicit.
-sequence :: NodeSequenceT g p o m a -> NodeSequenceT g p o m a
-sequence = id
+--sequence :: NodeSequenceT g p o m a -> NodeSequenceT g p o m a
+--sequence = id
 
 
 mapAccumRM :: (Monad m) => (acc -> x -> m (acc, y)) -> acc -> [x] -> m (acc, [y])

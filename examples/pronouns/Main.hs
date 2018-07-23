@@ -5,8 +5,8 @@ module Main where
 
 import Smarties
 import System.Random
-import Control.Monad.Random hiding (sequence)
-import Prelude hiding (sequence)
+import Control.Monad.Random
+import Prelude
 import Data.List (mapAccumL, intercalate)
 
 data Pronoun = HeHim | SheHer | TheyThem | FooBar | Other | Undecided deriving (Eq, Show)
@@ -84,38 +84,38 @@ utilityNormalness f = fromUtility $
 studentTree :: (RandomGen g) => NodeSequence g SchoolTreeState ActionType Float
 studentTree = utilityWeightedSelector
     [return . (*0.2) . (+0.01) =<< utilityWeightedSelector
-        [sequence $ do
+        [do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty feminimity
             actionChangePronoun SheHer
             return $ a * b
-        ,sequence $ do
+        ,do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty masculinity
             actionChangePronoun HeHim
             return $ a * b
-        ,sequence $ do
+        ,do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty developer
             actionChangePronoun FooBar
             return $ a * b
-        ,sequence $ do
+        ,do
             a <- utilityNormalness (toZeroOne . openlyChange)
             b <- utilityProperty noneOfTheAbove
             actionChangePronoun Other
             return $ a * b
-        ,sequence $ do
+        ,do
             a <- utilityNormalness (toZeroOne . openlyChange)
             m <- utilityProperty masculinity
             f <- utilityProperty feminimity
             actionChangePronoun TheyThem
             return $ a * ((1.0-m)+(1.0-f)) / 2.0
         ]
-    ,sequence $ do
+    ,do
         a <- utilityProperty indecisiveness
         actionChangeBack
         return $ 0.01 * a
-    ,sequence $ do
+    ,do
         a <- utilityNormalness ((1-) . toZeroOne . openlyChange)
         result SUCCESS
         return a

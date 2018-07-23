@@ -8,7 +8,7 @@ Stability   : experimental
 -}
 module Smarties.Nodes (
     -- $controllink
-    sequence,
+    --sequence,
     selector,
     weightedSelector,
     utilitySelector,
@@ -45,9 +45,8 @@ import Debug.Trace (trace)
 
 -- | intended use is "sequence $ do"
 -- This is prefered over just "do" as it's more explicit.
-sequence :: NodeSequence g p o a -> NodeSequence g p o a
-sequence = id
-
+--sequence :: NodeSequence g p o a -> NodeSequence g p o a
+--sequence = id
 
 
 -- |
@@ -67,10 +66,8 @@ selector ns = NodeSequence func where
 -- |
 weightedSelection :: (RandomGen g, Ord w, Random w, Num w) => g -> [(w,a)] -> (Maybe a, g)
 weightedSelection g ns = if total /= 0 then r else weightedSelection g (zip ([0..]::[Int]) . map snd $ ns) where
-    zero = fromInteger 0
-    one = fromInteger 1
-    (total, nssummed) = mapAccumL (\acc x -> (acc + fst x, (acc + fst x, snd x))) zero ns
-    (rn, g') = randomR (zero, total) g
+    (total, nssummed) = mapAccumL (\acc x -> (acc + fst x, (acc + fst x, snd x))) 0 ns
+    (rn, g') = randomR (0, total) g
     r = case find (\(w, _) -> w >= rn) nssummed of
         Just (_,n) -> (Just n, g')
         Nothing    -> (Nothing, g')
