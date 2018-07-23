@@ -74,7 +74,7 @@ execNodeSequenceTimesFinalizeT num n _g _p = do
 
 -- $nontransformerlink
 
--- | has the exact same interface as the one in Smarties.Base 
+-- | has the exact same interface as the one in Smarties.Base
 type NodeSequence g p o a = NodeSequenceT g p o Identity a
 
 -- |
@@ -168,18 +168,18 @@ instance MonadTrans (NodeSequenceT g p o) where
 
 
 instance (RandomGen g, Monad m) => MonadRandom (NodeSequenceT g p o m) where
-    -- are these suppose to update the generator?
+    -- TODO
     getRandoms = undefined
-    getRandomRs r = undefined
+    getRandomRs _ = undefined
     getRandom = do
-    	g <- getGenerator
-    	let
-    		(a, g') = random g
-    	setGenerator g'
-    	return a
+        g <- getGenerator
+        let
+            (a, g') = random g
+        setGenerator g'
+        return a
     getRandomR r = do
-    	g <- getGenerator
-    	let
-    		(a, g') = randomR r g
-    	setGenerator g'
-    	return a
+        g <- getGenerator
+        let
+            (a, g') = randomR r g
+        setGenerator g'
+        return a

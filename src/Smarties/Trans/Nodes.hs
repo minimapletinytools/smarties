@@ -37,8 +37,6 @@ import           Data.List                       (find, maximumBy, mapAccumL)
 import           Data.Maybe                      (fromMaybe)
 import           Data.Ord                        (comparing)
 
-import Debug.Trace (trace)
-
 
 -- $controllink
 -- control nodes
@@ -75,10 +73,8 @@ selector ns = NodeSequenceT func where
 -- |
 weightedSelection :: (RandomGen g, Ord w, Random w, Num w) => g -> [(w,a)] -> (Maybe a, g)
 weightedSelection g ns = if total /= 0 then r else weightedSelection g (zip ([0..]::[Int]) . map snd $ ns) where
-    zero = fromInteger 0
-    one = fromInteger 1
-    (total, nssummed) = mapAccumL (\acc x -> (acc + fst x, (acc + fst x, snd x))) zero ns
-    (rn, g') = randomR (zero, total) g
+    (total, nssummed) = mapAccumL (\acc x -> (acc + fst x, (acc + fst x, snd x))) 0 ns
+    (rn, g') = randomR (0, total) g
     r = case find (\(w, _) -> w >= rn) nssummed of
         Just (_,n) -> (Just n, g')
         Nothing    -> (Nothing, g')
@@ -96,7 +92,7 @@ utilitySelector ns = NodeSequenceT func where
     func g p = do
         (g', rslts) <- mapAccumRM (mapAccumNodeSequenceT p) g ns
         let compfn = (\(a,_,_,_,_)->a)
-        if length ns == 0
+        if null ns
             then return (error "utilitySelector: no children",g',p,FAIL,[])
             else return $ maximumBy (comparing compfn) rslts
 
@@ -120,7 +116,7 @@ flipResult :: (Monad m) => NodeSequenceT g p o m a -> NodeSequenceT g p o m a
 flipResult n = NodeSequenceT func where
         flipr s = if s == SUCCESS then FAIL else SUCCESS
         func g p = do
-            rslt <- (runNodes n) g p
+            rslt <- runNodes n g p
             return $ over _4 flipr rslt
 
 
