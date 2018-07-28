@@ -39,9 +39,9 @@ import           Smarties.Trans.Base
 -- helpers for building NodeSequenceT out of functions
 
 -- | Utility return utility only
--- we don't do
--- type Utility g p a = UtilityT g p Identity a
--- because we want to maintain interface compatability with Smarties
+-- we could also do
+-- 'type Utility g p a = UtilityT g p Identity a'
+-- but this breaks interface compatability with Smarties.Builders by changing the constructor names
 data Utility g p a where
     Utility :: (g -> p -> (a, g)) -> Utility g p a
     SimpleUtility :: (p -> a) -> Utility g p a
@@ -93,8 +93,7 @@ data SelfActionT g p o m where
     SelfActionT :: (Reduceable p o) => (g -> p -> m (g, o)) -> SelfActionT g p o m
     SimpleSelfActionT :: (Reduceable p o) => (p -> m o) -> SelfActionT g p o m
 
--- |
--- convert to NodeSequenceT
+-- | convert UtilityT to NodeSequenceT
 fromUtilityT :: (Monad m) => UtilityT g p m a -> NodeSequenceT g p o m a
 fromUtilityT n = NodeSequenceT $ case n of
     UtilityT f -> func f
@@ -105,14 +104,13 @@ fromUtilityT n = NodeSequenceT $ case n of
             return (a, g', p, SUCCESS, [])
 
 -- |
--- these methonds convert to transformer variant
+-- these methods convert to transformer variant
 fromUtility :: (Monad m) => Utility g p a -> NodeSequenceT g p o m a
 fromUtility n = case n of
     Utility f -> fromUtilityT $ UtilityT (\g p -> return $ f g p)
     SimpleUtility f -> fromUtilityT $ SimpleUtilityT (return . f)
 
--- |
--- convert to NodeSequenceT
+-- | converts PerceptionT to NodeSequenceT
 fromPerceptionT :: (Monad m) => PerceptionT g p m -> NodeSequenceT g p o m ()
 fromPerceptionT n = NodeSequenceT $ case n of
     PerceptionT f -> func f
@@ -127,15 +125,14 @@ fromPerceptionT n = NodeSequenceT $ case n of
             return ((), g', p', if b then SUCCESS else FAIL, [])
 
 -- |
--- these methonds convert to transformer variant
+-- these methods convert to transformer variant
 fromPerception :: (Monad m) => Perception g p -> NodeSequenceT g p o m ()
 fromPerception n = case n of
     Perception f -> fromPerceptionT $ PerceptionT (\g p -> return $ f g p)
     SimplePerception f -> fromPerceptionT $ SimplePerceptionT (return . f)
     ConditionalPerception f -> fromPerceptionT $ ConditionalPerceptionT (\g p -> return $ f g p)
 
--- |
--- convert to NodeSequenceT
+-- | converts ConditionT to NodeSequenceT
 fromConditionT :: (Monad m) => ConditionT g p m -> NodeSequenceT g p o m ()
 fromConditionT n = NodeSequenceT $ case n of
     ConditionT f -> func f
@@ -146,14 +143,13 @@ fromConditionT n = NodeSequenceT $ case n of
             return ((), g', p, if b then SUCCESS else FAIL, [])
 
 -- |
--- these methonds convert to transformer variant
+-- these methods convert to transformer variant
 fromCondition :: (Monad m) => Condition g p -> NodeSequenceT g p o m ()
 fromCondition n = case n of
     Condition f -> fromConditionT $ ConditionT (\g p -> return $ f g p)
     SimpleCondition f -> fromConditionT $ SimpleConditionT (return . f)
 
--- |
--- convert to NodeSequenceT
+-- | converts ActionT to NodeSequenceT
 fromActionT :: (Monad m) => ActionT g p o m -> NodeSequenceT g p o m ()
 fromActionT n = NodeSequenceT $ case n of
     ActionT f -> func f
@@ -165,14 +161,13 @@ fromActionT n = NodeSequenceT $ case n of
 
 
 -- |
--- these methonds convert to transformer variant
+-- these methods convert to transformer variant
 fromAction :: (Monad m) => Action g p o -> NodeSequenceT g p o m ()
 fromAction n = case n of
     Action f -> fromActionT $ ActionT (\g p -> return $ f g p)
     SimpleAction f -> fromActionT $ SimpleActionT (return . f)
 
--- |
--- convert to NodeSequenceT
+-- | converts SelftActionT to NodeSequenceT
 fromSelfActionT :: (Monad m) => SelfActionT g p o m -> NodeSequenceT g p o m ()
 fromSelfActionT n = NodeSequenceT $ case n of
     SelfActionT f -> func f
@@ -185,7 +180,7 @@ fromSelfActionT n = NodeSequenceT $ case n of
 
 
 -- |
--- these methonds convert to transformer variant
+-- these methods convert to transformer variant
 fromSelfAction :: (Monad m) => SelfAction g p o -> NodeSequenceT g p o m ()
 fromSelfAction n = case n of
     SelfAction f -> fromSelfActionT $ SelfActionT (\g p -> return $ f g p)

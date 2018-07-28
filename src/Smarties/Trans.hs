@@ -6,9 +6,9 @@ License     : GPL-3
 Maintainer  : chippermonky@email.com
 Stability   : experimental
 
-Using NodeSequence here should be identical to using the one in Smarties.
-
+This is a drop in replacement of Smarties.Base with MTL support.
 -}
+
 module Smarties.Trans (
     module Smarties.Trans.Base,
     module Smarties.Trans.Nodes,

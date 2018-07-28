@@ -52,6 +52,6 @@ crushCliqueFemininity = sequence $ do
 
 ## Roadmap: <a id="missing"></a>
 
-- Modelling history patterns is challenging here since the tree produces no side effects. In a previous implementation I could have added a **get/setZipper** methods to a type class constraint on the **perception** type. Currently, as sequences are represented as monads, one could add a monadic if/else that would not be possible to track :(. The current solution is to add something like **markOnExecution :: (Markable p) => String -> NodeSequence g p o ()** and leave the tracking to the user.
+- Modeling history patterns is challenging here since the tree produces no side effects. In a previous implementation I could have added a **get/setZipper** methods to a type class constraint on the **perception** type. Currently, as sequences are represented as monads, one could add a monadic if/else that would not be possible to track :(. The current solution is to add something like **markOnExecution :: (Markable p) => String -> NodeSequence g p o ()** and leave the tracking to the user.
 
 - Built in support for [Statistic.Distribution.Normal](https://hackage.haskell.org/package/statistics-0.14.0.2/docs/Statistics-Distribution-Normal.html) for modeling risk reward.
