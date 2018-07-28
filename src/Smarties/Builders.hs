@@ -1,6 +1,6 @@
 {-|
 Module      : Builders
-Description : Functions and types pertaining to DNA and Genes
+Description : 
 Copyright   : (c) Peter Lu, 2018
 License     : GPL-3
 Maintainer  : chippermonky@email.com
@@ -44,16 +44,16 @@ data Action g p o where
 
 -- | Conditions have status SUCCESS if they return true FAIL otherwise
 data Condition g p where
-    Condition :: (g -> p -> (Bool, g)) -> Condition g p 
-    SimpleCondition :: (p -> Bool) -> Condition g p 
+    Condition :: (g -> p -> (Bool, g)) -> Condition g p
+    SimpleCondition :: (p -> Bool) -> Condition g p
 
 -- | same as Action except output is applied to perception
 data SelfAction g p o where
-    SelfAction :: (Reduceable p o) => (g -> p -> (g, o)) -> SelfAction g p o 
+    SelfAction :: (Reduceable p o) => (g -> p -> (g, o)) -> SelfAction g p o
     SimpleSelfAction :: (Reduceable p o) => (p -> o) -> SelfAction g p o
 
 fromUtility :: Utility g p a -> NodeSequence g p o a
-fromUtility n = NodeSequence $ case n of 
+fromUtility n = NodeSequence $ case n of
     Utility f -> func f
     SimpleUtility f -> func (\g p -> (f p, g))
     where
@@ -61,26 +61,26 @@ fromUtility n = NodeSequence $ case n of
             (a, g') = f g p
 
 fromPerception :: Perception g p -> NodeSequence g p o ()
-fromPerception n = NodeSequence $ case n of 
+fromPerception n = NodeSequence $ case n of
     Perception f -> func f
     SimplePerception f -> func (\g p -> (g, f p))
     ConditionalPerception f -> cfunc f
-    where  
+    where
         func f g p = ((), g', p', SUCCESS, []) where
             (g', p') = f g p
         cfunc f g p = ((), g', p', if b then SUCCESS else FAIL, []) where
             (b, g', p') = f g p
 
 fromCondition :: Condition g p -> NodeSequence g p o ()
-fromCondition n = NodeSequence $ case n of 
+fromCondition n = NodeSequence $ case n of
     Condition f -> func f
     SimpleCondition f -> func (\g p -> (f p, g))
-    where  
+    where
         func f g p = ((), g', p, if b then SUCCESS else FAIL, []) where
             (b, g') = f g p
 
 fromAction :: Action g p o -> NodeSequence g p o ()
-fromAction n = NodeSequence $ case n of 
+fromAction n = NodeSequence $ case n of
     Action f -> func f
     SimpleAction f -> func (\g p -> (g, f p))
     where
@@ -88,7 +88,7 @@ fromAction n = NodeSequence $ case n of
             (g', o) = f g p
 
 fromSelfAction :: SelfAction g p o -> NodeSequence g p o ()
-fromSelfAction n = NodeSequence $ case n of 
+fromSelfAction n = NodeSequence $ case n of
     SelfAction f -> func f
     SimpleSelfAction f -> func (\g p -> (g, f p))
     where

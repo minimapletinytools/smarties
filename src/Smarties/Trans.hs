@@ -7,7 +7,6 @@ Maintainer  : chippermonky@email.com
 Stability   : experimental
 
 Using NodeSequence here should be identical to using the one in Smarties.
-Implemented as 2 separate modules for performance testing reasons.
 
 -}
 module Smarties.Trans (

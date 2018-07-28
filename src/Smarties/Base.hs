@@ -1,14 +1,12 @@
 {-|
 Module      : Base
-Description : Functions and types pertaining to DNA and Genes
+Description : 
 Copyright   : (c) Peter Lu, 2018
 License     : GPL-3
 Maintainer  : chippermonky@email.com
 Stability   : experimental
 -}
 
---{-# LANGUAGE ApplicativeDo #-}
---{-# RankNTypes #-}
 module Smarties.Base (
     Reduceable(..),
     Status(..),

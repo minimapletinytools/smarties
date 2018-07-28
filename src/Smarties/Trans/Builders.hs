@@ -1,10 +1,12 @@
 {-|
 Module      : Builders
-Description : Functions and types pertaining to DNA and Genes
+Description : MTL equivalent of Smarties.Builders
 Copyright   : (c) Peter Lu, 2018
 License     : GPL-3
 Maintainer  : chippermonky@email.com
 Stability   : experimental
+
+
 -}
 module Smarties.Trans.Builders (
     -- $helper1link

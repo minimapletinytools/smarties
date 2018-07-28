@@ -1,14 +1,15 @@
 {-|
 Module      : Base
-Description : Functions and types pertaining to DNA and Genes
+Description : MTL equivalent of Smarties.Base
 Copyright   : (c) Peter Lu, 2018
 License     : GPL-3
 Maintainer  : chippermonky@email.com
 Stability   : experimental
+
+This is a drop in replacement of Smarties.Base with MTL support.
+
 -}
 
---{-# LANGUAGE ApplicativeDo #-}
---{-# RankNTypes #-}
 module Smarties.Trans.Base (
     Reduceable(..),
     Status(..),
