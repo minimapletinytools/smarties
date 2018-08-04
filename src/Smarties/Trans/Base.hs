@@ -40,7 +40,7 @@ import Control.Applicative.Alternative
 class Reduceable p o where
     reduce :: [o] -> p -> p
 
---probably {-# OVERLAPPABLE #-}
+-- probably {-# OVERLAPPABLE #-}
 instance Reduceable a (a->a) where
     reduce os = foldr (.) id os
 

@@ -1,1 +1,3 @@
-- explore renaming Builders to not use T to remove boiler plate code ensuring compatability e.g. Utility instead of UtilityT 
+- explore renaming Builders to not use T to remove boiler plate code ensuring compatibility e.g. Utility instead of UtilityT
+- switch to smaller lens package
+- there are some NodeSequences in Base.h needed for stuff. include them in nodes export

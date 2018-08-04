@@ -22,7 +22,10 @@ module Smarties.Nodes (
     result,
 
     -- $conditionlink
-    rand
+    rand,
+
+    -- ??
+    getPerception
 
 ) where
 

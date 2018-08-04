@@ -21,7 +21,10 @@ import Text.Printf
 
 type Pos = (Int, Int)
 
-data Feelings = Happy | Sad | Hungry | Apathy deriving (Show)
+addPos :: Pos -> Pos -> Pos
+addPos (x1,y1) (x2,y2) = (x1+y1, x2+y2)
+
+data Feelings = Happy | Sad | Hungry | Apathy deriving (Show, Eq)
 data Doings = BlowingBubbles | Eating | Bored deriving (Show)
 
 data Slime = Slime {
@@ -31,24 +34,59 @@ data Slime = Slime {
     _weight :: Int
 } deriving (Show)
 
-renderSlime :: Slime -> String
-renderSlime (Slime _ f _ _) = case f of
-    Happy -> "😊"
-    Sad -> "😟"
-    Hungry -> "😋"
-    Apathy -> "😐"
-
+-- world size parameters
 width :: Int
 width = 20
 height :: Int
 height = 20
 numberCells :: Int
 numberCells = width * height
+neighbors :: [Pos]
+neighbors = [(-1,0),(1,0),(0,-1),(0,1)]
+
+-- TODO make sure this does what you want with neg coordinates...
+wrapFlattenCoords :: Pos -> Int
+wrapFlattenCoords (x,y) = (y `mod` height) * width + x `mod` width
+
+-- behavior tree types
 type Slimes = [Slime]
-type TreeStateType = (Slimes, Slime)
+type SlimeGrid = V.Vector (Maybe Slime)
+type TreeStateType = (SlimeGrid, Slime)
 type ActionType = (Slime -> Slimes)
 
--- |
+-- | extract slime that is being operated on from behavior tree perception
+getMyself :: NodeSequence g TreeStateType ActionType Slime
+getMyself = do
+    (_, s) <- getPerception
+    return s
+
+-- | extract a neighboring slime
+getSlimeRelative :: Pos -> NodeSequence g TreeStateType ActionType (Maybe Slime)
+getSlimeRelative p = do
+    (grid, _) <- getPerception
+    return $ grid V.! wrapFlattenCoords p
+
+-- | get a list of neigboring slimes
+getNeighborSlimes :: NodeSequence g TreeStateType ActionType Slimes
+getNeighborSlimes = do
+    (grid, s) <- getPerception
+    return . mapMaybe ((grid V.!) . wrapFlattenCoords . addPos (_pos s)) $ neighbors
+
+-- behavior tree nodes
+conditionSlimeIsFeeling :: Feelings -> Slime -> NodeSequence g TreeStateType ActionType ()
+conditionSlimeIsFeeling f s = fromCondition $
+    SimpleCondition (\_ -> _feeling s == f)
+
+-- | our behavior tree
+slimeTree :: (RandomGen g) => NodeSequence g TreeStateType ActionType Int
+slimeTree = do
+    l <- getNeighborSlimes
+    if length l == 0 then do
+        utilityWeightedSelector []
+    else do
+        return 0
+
+-- | DELETE
 -- our slime action is a special case of behavior tree action type where there should only ever be one action in the output of the tree
 -- we do a runtime check here to make sure this is the case
 -- unfortunately smarties currently does not support type level checking of this constraint :(.
@@ -58,18 +96,24 @@ extractHead fs
     | length fs == 1 = head fs
     | otherwise = error "slime behavior tree must only have one output"
 
--- |
--- puts slimes in a grid
-makeSlimeGrid :: Slimes -> [Maybe Slime]
+-- | puts slimes in a grid
+makeSlimeGrid :: Slimes -> SlimeGrid
 makeSlimeGrid slimes = runST $ do
     grid <- MV.replicate numberCells Nothing
     forM_ slimes $ \s@(Slime (x,y) _ _ _) -> MV.write grid (y*width+x) (Just s)
-    V.toList <$> V.freeze grid
+    V.freeze grid
 
--- |
--- helper for writing slimes to console :)
+-- | helper for writing slimes to console :)
+renderSlime :: Slime -> String
+renderSlime (Slime _ f _ _) = case f of
+    Happy -> "😊"
+    Sad -> "😟"
+    Hungry -> "😋"
+    Apathy -> "😐"
+
+-- | helper for writing slimes to console :)
 renderSlimes :: Slimes -> String
-renderSlimes = ifoldl func "" . makeSlimeGrid where
+renderSlimes = ifoldl func "" . V.toList . makeSlimeGrid where
     func acc i x = output where
         nl = if i+1 `mod` width == 0 then "\n" else ""
         se = case x of
@@ -77,8 +121,7 @@ renderSlimes = ifoldl func "" . makeSlimeGrid where
             Nothing -> " "
         output = printf "%s %s%c" acc se nl
 
--- |
--- fuse slimes that share the same cell
+-- | fuse slimes that share the same cell
 fuseSlimes :: Slimes -> Slimes
 fuseSlimes slimes =  runST $ do
     grid <- MV.replicate numberCells Nothing
@@ -90,22 +133,12 @@ fuseSlimes slimes =  runST $ do
             (y*width+x)
     catMaybes . V.toList <$> V.freeze grid
 
-slimeTree :: (RandomGen g) => NodeSequence g TreeStateType ActionType Int
-slimeTree =
-    -- weighted selector chooses the child with largest weight
-    -- which is the (Float) monadic return value of the child NodeSequence
-    utilityWeightedSelector []
-
-
-
-
--- |
--- run slimeTree for each slime collecting results
+-- | run slimeTree for each slime collecting results
 slimeCycle :: (RandomGen g) => g -> Slimes -> (g, Slimes)
-slimeCycle g0 slimes = over _2 concat $ (mapAccumL runSlimeTree g0 slimes) where
+slimeCycle g0 slimes = over _2 (fuseSlimes . concat) (mapAccumL runSlimeTree g0 slimes) where
     -- function to run slime tree over all slimes accumulating the RNG
-    runSlimeTree g slime = (g', extractHead os slime) where
-        (g', _, _, os) = execNodeSequence slimeTree g (slimes, slime)
+    runSlimeTree g slime = (g', concat (map ($ slime) os)) where
+        (g', _, _, os) = execNodeSequence slimeTree g (makeSlimeGrid slimes, slime)
 
 applyNtimes :: (Num n, Ord n) => n -> (a -> a) -> a -> a
 applyNtimes 1 f x = f x
@@ -128,6 +161,9 @@ main = do
         --outSlimes = applyNtimes 100 (\(g,s) -> slimeCycle g s) (stdgen, genesis)
         cycleOnce (g,s) = do
             let (g',s') = slimeCycle g s
-            threadDelay 10000
+            putStrLn "gen"
+            putStrLn $ renderSlimes s'
+            putStrLn "done"
+            threadDelay 1
             cycleOnce (g',s')
     cycleOnce (stdgen, genesis)
