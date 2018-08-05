@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Utility type no longer requires `Num`/`Ord` constraints, these constraints are enforced by the selectors that use them.
+- Pronouns moved out of main README.md
+- updated Pronouns README.md
 
 ### Removed
 - Removed `sequence` method

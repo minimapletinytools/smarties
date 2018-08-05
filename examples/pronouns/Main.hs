@@ -132,7 +132,7 @@ makeStudent = do
 main :: IO ()
 main = do
     stdgen <- getStdGen
-    students <- replicateM 100 $ evalRandIO makeStudent
+    students <- replicateM 10 $ evalRandIO makeStudent
     let
         studentfn g s = (g', (foldl (.) id os) s) where
             (g', _, _, os) = execNodeSequence studentTree g (students, s)

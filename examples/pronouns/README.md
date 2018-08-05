@@ -123,20 +123,32 @@ makeStudent = do
 
 main :: IO ()
 main = do
-	stdgen <- getStdGen
-	students <- replicateM 100 $ evalRandIO makeStudent
-	let
-		tree = getTree studentTree
-		studentfn g s = (g', (foldl1 (.) o) s) where
-			(rslt, (BasicTreeState _ g'), o) = tickTree tree $ BasicTreeState (students, s) g
-		ticktStudents sts = snd $ mapAccumL studentfn stdgen sts
-		loop 0 sts = return ()
-		loop n sts = do
-			let
-				nextsts = ticktStudents sts
-			putStrLn . show $ nextsts
-			loop (n-1) nextsts
-	loop 365 students
+    stdgen <- getStdGen
+    students <- replicateM 10 $ evalRandIO makeStudent
+    let
+        studentfn g s = (g', (foldl (.) id os) s) where
+            (g', _, _, os) = execNodeSequence studentTree g (students, s)
+        ticktStudents g sts = mapAccumL studentfn g sts
+        loop (0::Int) _ sts = return sts
+        loop n g sts = do
+            let (g', nextsts) = ticktStudents g sts
+            putStrLn . show $ (sum . map (toZeroOne . openlyChange) $ nextsts) --  / (fromIntegral $ length nextsts)
+            loop (n-1) g' nextsts
+    sts <- loop 365 stdgen students
+    putStrLn $ intercalate "\n" $ map (\s -> show (preferredPronoun s) ++ " " ++ show (assignedPronoun s) ++ " " ++ show (openlyChange s)) sts
 ```
 
 Finally, we run the tree and output the results :D.
+
+```
+Other HeHim True
+SheHer SheHer True
+SheHer SheHer False
+Other SheHer True
+SheHer SheHer False
+TheyThem SheHer True
+Other HeHim True
+FooBar SheHer True
+SheHer SheHer False
+HeHim HeHim True
+```
