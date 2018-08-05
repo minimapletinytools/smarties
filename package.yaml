@@ -41,6 +41,7 @@ default-extensions:
 - ScopedTypeVariables
 - FlexibleInstances
 - MultiParamTypeClasses
+- TemplateHaskell
 
 library:
   source-dirs: src

@@ -20,6 +20,7 @@ module Smarties.Nodes (
 
     -- $actionlink
     result,
+    condition,
 
     -- $conditionlink
     rand,
@@ -133,6 +134,10 @@ flipResult n = NodeSequence func where
 -- | create a status node that has the given status
 result :: Status -> NodeSequence g p o ()
 result s = NodeSequence (\g p -> ((), g, p, s, []))
+
+-- | create a status node that has the given status
+condition :: Bool -> NodeSequence g p o ()
+condition s = NodeSequence (\g p -> ((), g, p, if s then SUCCESS else FAIL, []))
 
 -- $conditionlink
 -- conditions

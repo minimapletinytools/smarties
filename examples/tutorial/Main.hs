@@ -10,7 +10,7 @@ import Control.Concurrent
 import Control.Monad hiding (sequence)
 import Control.Applicative ((<$>))
 import Control.Monad.ST
-import Control.Lens (over, _2)
+import Control.Lens
 import Prelude hiding (sequence)
 import Data.List
 import Data.List.Index (ifoldl)
@@ -34,6 +34,8 @@ data Slime = Slime {
     _weight :: Int
 } deriving (Show)
 
+makeLenses ''Slime
+
 -- world size parameters
 width :: Int
 width = 20
@@ -43,6 +45,10 @@ numberCells :: Int
 numberCells = width * height
 neighbors :: [Pos]
 neighbors = [(-1,0),(1,0),(0,-1),(0,1)]
+
+
+wrapCoords :: Pos -> Pos
+wrapCoords (x,y) = (x `mod` width, y `mod` height)
 
 -- TODO make sure this does what you want with neg coordinates...
 wrapFlattenCoords :: Pos -> Int
@@ -61,8 +67,8 @@ getMyself = do
     return s
 
 -- | extract a neighboring slime
-getSlimeRelative :: Pos -> NodeSequence g TreeStateType ActionType (Maybe Slime)
-getSlimeRelative p = do
+getSlimeRel :: Pos -> NodeSequence g TreeStateType ActionType (Maybe Slime)
+getSlimeRel p = do
     (grid, _) <- getPerception
     return $ grid V.! wrapFlattenCoords p
 
@@ -73,18 +79,58 @@ getNeighborSlimes = do
     return . mapMaybe ((grid V.!) . wrapFlattenCoords . addPos (_pos s)) $ neighbors
 
 -- behavior tree nodes
+-- DELETE
 conditionSlimeIsFeeling :: Feelings -> Slime -> NodeSequence g TreeStateType ActionType ()
 conditionSlimeIsFeeling f s = fromCondition $
     SimpleCondition (\_ -> _feeling s == f)
 
+actionMoveSlime :: Pos -> NodeSequence g TreeStateType ActionType ()
+actionMoveSlime p = fromAction $
+    SimpleAction (\_ -> \s -> [set pos (wrapCoords p) s])
+-- |
+actionMoveSlimeRel :: Pos -> NodeSequence g TreeStateType ActionType ()
+actionMoveSlimeRel p = fromAction $
+    SimpleAction (\_ -> \s -> [over pos (wrapCoords . addPos p) s])
+
+actionSlime :: NodeSequence g TreeStateType ActionType ()
+actionSlime = actionCloneSlimeRel (0,0)
+
+actionCloneSlimeRel :: Pos -> NodeSequence g TreeStateType ActionType ()
+actionCloneSlimeRel p = do
+    actionMoveSlimeRel p
+    actionSlime
+
+
 -- | our behavior tree
-slimeTree :: (RandomGen g) => NodeSequence g TreeStateType ActionType Int
+slimeTree :: (RandomGen g) => NodeSequence g TreeStateType ActionType ()
 slimeTree = do
-    l <- getNeighborSlimes
-    if length l == 0 then do
-        utilityWeightedSelector []
-    else do
-        return 0
+    nbs <- getNeighborSlimes
+    s <- getMyself
+    selector [
+        -- no neighbors
+        do
+            condition (length nbs == 0)
+            case _feeling s of
+                Happy -> actionMoveSlimeRel (1,0)
+                Sad -> actionMoveSlimeRel (-1,0)
+                Hungry -> actionMoveSlimeRel (0,1)
+                _ -> actionSlime
+        -- 1 neighbor
+        , do
+            condition (length nbs == 1)
+            s <- getMyself
+            let
+                nb = head nbs
+            case (_feeling nb, _feeling s) of
+                (Happy, Happy) -> actionMoveSlimeRel (0,1)
+                (Sad, Sad) -> actionMoveSlimeRel (0,-1)
+                (Sad, Happy) -> actionMoveSlime (_pos nb)
+                _ -> actionSlime
+        ]
+
+        -- > 1 neighbor case
+        -- don't do anything, this means the slime will die :(
+
 
 -- | DELETE
 -- our slime action is a special case of behavior tree action type where there should only ever be one action in the output of the tree
@@ -113,13 +159,13 @@ renderSlime (Slime _ f _ _) = case f of
 
 -- | helper for writing slimes to console :)
 renderSlimes :: Slimes -> String
-renderSlimes = ifoldl func "" . V.toList . makeSlimeGrid where
+renderSlimes = Data.List.Index.ifoldl func "" . V.toList . makeSlimeGrid where
     func acc i x = output where
         nl = if i+1 `mod` width == 0 then "\n" else ""
         se = case x of
             Just s -> renderSlime s
             Nothing -> " "
-        output = printf "%s %s%c" acc se nl
+        output = printf "%s %s %s" acc se nl
 
 -- | fuse slimes that share the same cell
 fuseSlimes :: Slimes -> Slimes
@@ -159,11 +205,11 @@ main = do
     let
         genesis = [Slime (0,0) Sad Bored 1] -- 😢
         --outSlimes = applyNtimes 100 (\(g,s) -> slimeCycle g s) (stdgen, genesis)
-        cycleOnce (g,s) = do
+        cycleOnce n (g,s) = do
             let (g',s') = slimeCycle g s
-            putStrLn "gen"
+            putStrLn $ "gen " ++ show n
             putStrLn $ renderSlimes s'
             putStrLn "done"
-            threadDelay 1
-            cycleOnce (g',s')
-    cycleOnce (stdgen, genesis)
+            threadDelay 100
+            cycleOnce (n+1) (g',s')
+    cycleOnce 0 (stdgen, genesis)
