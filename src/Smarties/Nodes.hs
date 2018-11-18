@@ -3,7 +3,7 @@ Module      : Nodes
 Description : Various types of generic control nodes
 Copyright   : (c) Peter Lu, 2018
 License     : GPL-3
-Maintainer  : chippermonky@email.com
+Maintainer  : chippermonky@gmail.com
 Stability   : experimental
 -}
 

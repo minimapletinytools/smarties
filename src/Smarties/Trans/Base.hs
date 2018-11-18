@@ -3,7 +3,7 @@ Module      : Base
 Description : MTL equivalent of Smarties.Base
 Copyright   : (c) Peter Lu, 2018
 License     : GPL-3
-Maintainer  : chippermonky@email.com
+Maintainer  : chippermonky@gmail.com
 Stability   : experimental
 -}
 

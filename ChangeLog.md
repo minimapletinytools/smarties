@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Added `Smarties.Trans` containing Monad Transformer variant `NodeSequenceT`. Currently as separate module for performance reasons. I still have to do side by side benchmarks. I'm pretty sure it's a substantial performance hit especially due to all the extra wrapping/unwrapping that happens in selector nodes.
 - Added transformer variants in `Smarties.Trans.Builders`
-- Added tutorial to examples (unfinished)
+- Added conway game of life tutorial to examples
 - Haddock comment cleanup
 
 ### Changed

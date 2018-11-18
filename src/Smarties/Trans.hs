@@ -3,7 +3,7 @@ Module      : Smarties.Trans
 Description : Same as Smarties except with monad transformer.
 Copyright   : (c) Peter Lu, 2018
 License     : GPL-3
-Maintainer  : chippermonky@email.com
+Maintainer  : chippermonky@gmail.com
 Stability   : experimental
 
 This is a drop in replacement of Smarties.Base with MTL support.

@@ -4,6 +4,8 @@ Smarties is a general purpose [behavior tree](https://en.wikipedia.org/wiki/Beha
 
 Behavior trees are written in a DSL built with the **NodeSequence** monad. Monadic return values are used for computing utility and passing state between nodes.
 
+To jump right in, please see the this tutorial example implementing [Conway's Game of Life](https://github.com/pdlla/smarties/tree/master/examples/tutorial). There are other examples in the examples folder that I either put in too little or too much effort.
+
 ## Terminology
 
 - **perception**: input and computation state of the behavior tree. Named perception because it represents how the tree perceives the outside world. **perception** is not mutable when executing the tree and can be used to carry computation state.
@@ -35,12 +37,12 @@ The sequence represents a computation that takes a generator and perception and 
 In the example above, the monadic return values are used only for computing utility. This value is useful for passing general information between nodes. Another common usage pattern is for implementing loops. For example:
 
 ```haskell
-crushCliqueFemininity = sequence $ do
-	x <- findCrush
-	n <- numberStudentsAround x
+howQueerIsMyFriend = sequence $ do
+	x <- getFriend
+	n <- numberFriendsOf x
 	clique <- forM [0..(n-1)] (\n' -> do
-		s <- getStudentAround x n'
-		return feminimity s
+		s <- getFriendOf x n'
+		return queerness s
 		)
 	return (mean clique)
 ```
@@ -51,8 +53,12 @@ crushCliqueFemininity = sequence $ do
 
 - Please ignore NotSoSmarties. This will be removed in 1.1
 
+- Each iteration of this library got more and more generalized as I leveraged more and more of Haskell's monadic syntax. It may be so generalized now that you may as well just write your logic in vanilla Haskell. But that's hardly my concern :).
+
 ## Roadmap: <a id="missing"></a>
 
-- Modeling history patterns is challenging here since the tree produces no side effects. In a previous implementation I could have added a **get/setZipper** methods to a type class constraint on the **perception** type. Currently, as sequences are represented as monads, one could add a monadic if/else that would not be possible to track :(. The current solution is to add something like **markOnExecution :: (Markable p) => String -> NodeSequence g p o ()** and leave the tracking to the user.
+- Modeling history patterns is challenging here since the tree produces no side effects. In a previous implementation I could have added a **get/setZipper** methods to a type class constraint on the **perception** type. Currently, as sequences are represented as monads, one could add a monadic if/else that would not be possible to track :(. The current solution is to add something like **markOnExecution :: (Markable p) => String -> NodeSequence g p o ()** and leave the tracking to the user using string IDs.
 
 - Built in support for [Statistic.Distribution.Normal](https://hackage.haskell.org/package/statistics-0.14.0.2/docs/Statistics-Distribution-Normal.html) for modeling risk reward. This includes [basic](https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables) [operations](https://ccrma.stanford.edu/~jos/sasp/Product_Two_Gaussian_PDFs.html) on distributions.
+
+- The concept of success/failure in behavior trees can be implemented using Haskell's monadic syntax. When writing the examples, several times I found it easier just to implement my selectors using simple monadic if/else statements. At this point, it's not really a behavior tree anymore though but still something to consider. Perhaps it is the case that Haskell's monadic syntax is a generalized behavior tree and this library is just an exercise for me to uncover this fact :).

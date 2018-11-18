@@ -2,3 +2,4 @@
 smarties.cabal
 *~
 *.prof
+.DS_Store
