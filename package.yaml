@@ -71,6 +71,18 @@ executables:
     - smarties
     - ilist
     - vector
+
+  slimes:
+    main:                Main.hs
+    source-dirs:         examples/slimes
+    ghc-options:
+    - -threaded
+    - -rtsopts
+    - -with-rtsopts=-N
+    dependencies:
+    - smarties
+    - ilist
+    - vector
     - haskeline
 
 

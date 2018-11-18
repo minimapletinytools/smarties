@@ -1,22 +1,24 @@
 {-|
 Module      : Main
-Description : silme example
+Description : Slime Game
 Copyright   : (c) Peter Lu, 2018
 License     : GPL-3
 Maintainer  : chippermonky@gmail.com
-Stability   : abandoned D:
+Stability   : experimental
 
-Example with slimes. I never put enough time into this to make it do anything interesting.
-
-Please feel free to finish it and make a PR :)
+Example simulating colony of slimes with feelings using smarties.
+Unfinished and unworking. You're welcome to fix it for me :).
 -}
+
 
 {-# LANGUAGE TypeSynonymInstances           #-}
 
 module Main where
 
-import Smarties.Trans
+import Smarties
 import System.Random
+import System.Console.Haskeline
+import System.Exit
 import Control.Concurrent
 import Control.Monad hiding (sequence)
 import Control.Applicative ((<$>))
@@ -29,8 +31,6 @@ import Data.Maybe
 import qualified Data.Vector as V
 import qualified Data.Vector.Mutable as MV
 import Text.Printf
-
-import Debug.Trace
 
 type Pos = (Int, Int)
 
@@ -57,7 +57,8 @@ height = 20
 numberCells :: Int
 numberCells = width * height
 neighbors :: [Pos]
-neighbors = [(-1,0),(1,0),(0,-1),(0,1),(1,1),(1,-1),(-1,1),(-1,-1)]
+neighbors = [(-1,0),(1,0),(0,-1),(0,1)]
+
 
 wrapCoords :: Pos -> Pos
 wrapCoords (x,y) = (x `mod` width, y `mod` height)
@@ -68,13 +69,27 @@ wrapFlattenCoords (x,y) = (y `mod` height) * width + x `mod` width
 
 -- behavior tree types
 type Slimes = [Slime]
-type SlimeGrid = V.Vector Bool
-type TreeStateType = (SlimeGrid, Pos)
-type ActionType = (Bool -> Bool)
+type SlimeGrid = V.Vector (Maybe Slime)
+type TreeStateType = (SlimeGrid, Slime)
 
--- | get a list of neigboring slime
-countNeighbors :: NodeSequence g TreeStateType ActionType Int
-countNeighbors = do
+-- slime action is a little weird, for example if the output is [\x->[x],\x->[x]] this will actually make 2 copies of the slime in the same spot.
+type ActionType = (Slime -> Slimes)
+
+-- | extract slime that is being operated on from behavior tree perception
+getMyself :: NodeSequence g TreeStateType ActionType Slime
+getMyself = do
+    (_, s) <- getPerception
+    return s
+
+-- | extract a neighboring slime
+getSlimeRel :: Pos -> NodeSequence g TreeStateType ActionType (Maybe Slime)
+getSlimeRel p = do
+    (grid, _) <- getPerception
+    return $ grid V.! wrapFlattenCoords p
+
+-- | get a list of neigboring slimes
+getNeighborSlimes :: NodeSequence g TreeStateType ActionType Slimes
+getNeighborSlimes = do
     (grid, s) <- getPerception
     return . mapMaybe ((grid V.!) . wrapFlattenCoords . addPos (_pos s)) $ neighbors
 
@@ -87,6 +102,7 @@ conditionSlimeIsFeeling f s = fromCondition $
 actionMoveSlime :: Pos -> NodeSequence g TreeStateType ActionType ()
 actionMoveSlime p = fromAction $
     SimpleAction (\_ -> \s -> [set pos (wrapCoords p) s])
+
 -- |
 actionMoveSlimeRel :: Pos -> NodeSequence g TreeStateType ActionType ()
 actionMoveSlimeRel p = fromAction $
@@ -101,6 +117,11 @@ actionCloneSlimeRel p = do
     actionSlime
 
 
+-- | for testing
+potatoTree :: (RandomGen g) => NodeSequence g TreeStateType ActionType ()
+potatoTree = do
+  actionMoveSlimeRel (1,-1)
+
 -- | our behavior tree
 slimeTree :: (RandomGen g) => NodeSequence g TreeStateType ActionType ()
 slimeTree = do
@@ -111,7 +132,7 @@ slimeTree = do
         do
             condition (null nbs)
             case _feeling s of
-                Happy -> actionCloneSlimeRel (0,1)
+                Happy -> actionCloneSlimeRel (1,0)
                 Sad -> actionCloneSlimeRel (-1,0)
                 Hungry -> actionMoveSlimeRel (0,1)
                 _ -> actionSlime
@@ -122,13 +143,16 @@ slimeTree = do
                 nb = head nbs
             case (_feeling nb, _feeling s) of
                 (Happy, Happy) -> actionMoveSlimeRel (0,1)
-                (Sad, Sad) -> actionMoveSlimeRel (0,-1)
+                (Sad, Sad) -> actionCloneSlimeRel (0,-1)
                 (Sad, Happy) -> actionMoveSlime (_pos nb)
                 _ -> actionSlime
+        -- >1 neighbors
+        , actionMoveSlimeRel (0,1)
         ]
 
         -- > 1 neighbor case
         -- don't do anything, this means the slime will die :(
+
 
 -- | DELETE
 -- our slime action is a special case of behavior tree action type where there should only ever be one action in the output of the tree
@@ -172,16 +196,15 @@ fuseSlimes slimes =  runST $ do
     forM_ slimes $ \s@(Slime (x,y) _ _ w) ->
         MV.modify grid
             (\case
+                -- fused slimes just ate each other so they are
                 Just (Slime _ _ _ w2) -> Just $ Slime (x,y) Happy Eating (w+w2)
                 Nothing -> Just s)
             (y*width+x)
     catMaybes . V.toList <$> V.freeze grid
 
 -- | run slimeTree for each slime collecting results
--- TODO make this run concurrently :)
--- need to pregen generators
 slimeCycle :: (RandomGen g) => g -> Slimes -> (g, Slimes)
-slimeCycle g0 slimes =  over _2 (fuseSlimes . concat) (mapAccumL runSlimeTree g0 slimes) where
+slimeCycle g0 slimes = over _2 (fuseSlimes . concat) (mapAccumL runSlimeTree g0 slimes) where
     -- function to run slime tree over all slimes accumulating the RNG
     runSlimeTree g slime = (g', concat (map ($ slime) os)) where
         (g', _, _, os) = execNodeSequence slimeTree g (makeSlimeGrid slimes, slime)
@@ -191,6 +214,13 @@ applyNtimes 1 f x = f x
 applyNtimes n f x = f (applyNtimes (n-1) f x)
 
 
+{-exitLoop :: IO ()
+exitLoop = do
+    minput <- getInputChar "% "
+    case minput of
+        Nothing -> return ()
+        Just 'q' -> exitSuccess-}
+
 main :: IO ()
 main = do
     --forkIO exitLoop
@@ -199,10 +229,10 @@ main = do
         genesis = [Slime (0,0) Sad Bored 1] -- 😢
         --outSlimes = applyNtimes 100 (\(g,s) -> slimeCycle g s) (stdgen, genesis)
         cycleOnce (n :: Int) (g,s) = do
-            printf "gen %d slimes %d\n" n (length s)
-            let (g',s') = slimeCycle g s
-            putStrLn $ renderSlimes s'
             putStrLn "done"
+            putStrLn $ renderSlimes s
+            let (g',s') = slimeCycle g s
+            putStrLn $ "gen " ++ show n
             threadDelay 100000
             cycleOnce (n+1) (g',s')
     cycleOnce 0 (stdgen, genesis)
