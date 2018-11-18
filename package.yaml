@@ -46,21 +46,10 @@ default-extensions:
 library:
   source-dirs: src
   exposed-modules:
-    - NotSoSmarties
     - Smarties
     - Smarties.Trans
 
 executables:
-  notsosmart:
-    main:                Main.hs
-    source-dirs:         examples/notsosmart
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - smarties
-
   pronouns:
     main:                Main.hs
     source-dirs:         examples/pronouns

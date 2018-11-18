@@ -51,8 +51,6 @@ howQueerIsMyFriend = sequence $ do
 
 - If you need the MTL style NodeSequence use `Smarties.Trans`, otherwise stick with `Smarties` for better performance
 
-- Please ignore NotSoSmarties. This will be removed in 1.1
-
 - Each iteration of this library got more and more generalized as I leveraged more and more of Haskell's monadic syntax. It may be so generalized now that you may as well just write your logic in vanilla Haskell. But that's hardly my concern :).
 
 ## Roadmap: <a id="missing"></a>
