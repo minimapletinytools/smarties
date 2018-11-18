@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.com/pdlla/smarties.svg?branch=master)](https://travis-ci.com/pdlla/smarties)
+
 # smarties
 
 Smarties is a general purpose [behavior tree](https://en.wikipedia.org/wiki/Behavior_tree_(artificial_intelligence,_robotics_and_control)) library written in Haskell. The library supports utility AI for advanced decision making. Smarties implements many of the design patterns outlined in this [paper](https://course.ccs.neu.edu/cs5150f13/readings/dill_designpatterns.pdf) and some that aren't.
