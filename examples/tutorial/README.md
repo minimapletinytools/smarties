@@ -1,3 +1,30 @@
+run `stack exec tutorial`
+
+```
+🌱🌱🌱🌱🌱😱🌱🌱🌱😱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱😱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱😱😱🌱😱🌱🌱🌱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱😱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱😱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱😱🌱🌱🌱🌱😱😱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱😱😱🌱🌱🌱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱😱😱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱😱😱🌱🌱🌱😱😱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱😱🌱😱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱😱😱😱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱😱😱😱🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱😱🌱🌱🌱🌱🌱🌱🌱😱😱
+🌱🌱🌱🌱🌱🌱🌱😱🌱🌱🌱😱🌱🌱🌱🌱🌱🌱😱😱
+🌱🌱🌱🌱🌱🌱😱😱🌱🌱🌱😱🌱🌱🌱🌱🌱🌱😱😱
+🌱🌱🌱🌱🌱😱🌱🌱🌱🌱🌱😱🌱🌱🌱🌱🌱🌱🌱🌱
+🌱🌱🌱🌱🌱🌱🌱🌱🌱🌱😱🌱🌱🌱🌱🌱🌱🌱🌱🌱
+```
+
+## Tutorial
+
 In this example, we'll use smarties to implement the rules for [Conway's Game of Life (CGoL)](https://en.wikipedia.org/wiki/Conway%27s_Game_of_Life).
 
 First we declare some constants and a bunch of helper methods to form grid which we'll be running our CGoL simulation on.
