@@ -91,11 +91,13 @@ fromAction n = NodeSequence $ case n of
         func f g p = ((), g', p, SUCCESS, [o]) where
             (g', o) = f g p
 
+
 -- | converts SelfAction to NodeSequenceT
+-- WARNING: MAY BE REMOVED IN A FUTURE RELEASE
 fromSelfAction :: SelfAction g p o -> NodeSequence g p o ()
 fromSelfAction n = NodeSequence $ case n of
     SelfAction f -> func f
     SimpleSelfAction f -> func (\g p -> (g, f p))
     where
-        func f g p = ((), g', reduce [o] p, SUCCESS, []) where
+        func f g p = ((), g', reduce [o] p, SUCCESS, [o]) where
             (g', o) = f g p

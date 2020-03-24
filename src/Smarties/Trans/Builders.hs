@@ -168,6 +168,7 @@ fromAction n = case n of
     SimpleAction f -> fromActionT $ SimpleActionT (return . f)
 
 -- | converts SelftActionT to NodeSequenceT
+-- WARNING: MAY BE REMOVED IN A FUTURE RELEASE
 fromSelfActionT :: (Monad m) => SelfActionT g p o m -> NodeSequenceT g p o m ()
 fromSelfActionT n = NodeSequenceT $ case n of
     SelfActionT f -> func f
