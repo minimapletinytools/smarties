@@ -88,13 +88,12 @@ setGenerator g = NodeSequence $ (\_ p -> ((), g, p, SUCCESS, []))
 
 -- instance declarations for NodeSequence
 -- helpers for building NodeSequence in Monad land
-
-instance  Functor (NodeSequence g p o) where
+instance Functor (NodeSequence g p o) where
     fmap f n = do
         a <- n
         return $ f a
 
-instance  Applicative (NodeSequence g p o) where
+instance Applicative (NodeSequence g p o) where
     pure a = NodeSequence (\g p -> (a, g, p, SUCCESS, []))
     -- we should do something naughty here instead of reusing >>=
     liftA2 f n1 n2 = do
@@ -109,8 +108,8 @@ instance Alternative (NodeSequence g p o) where
         a <|> b = a >>= \_ -> b
 
 -- |
--- note this looks a lot like (StateT (g,p) Writer o) but has special functionality built in
--- note, I'm pretty sure this does not satisfy monad laws
+-- Note this looks a lot like `StateT (g,p) Writer [o]` but has special functionality built in
+-- Also note, I'm pretty sure this does NOT satisfy monad laws!!
 instance  Monad (NodeSequence g p o) where
     -- should only ever be used by sequence type nodes
     (>>=) :: NodeSequence g p o a -> (a -> NodeSequence g p o b) -> NodeSequence g p o b

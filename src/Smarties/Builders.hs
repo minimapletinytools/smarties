@@ -97,5 +97,5 @@ fromSelfAction n = NodeSequence $ case n of
     SelfAction f -> func f
     SimpleSelfAction f -> func (\g p -> (g, f p))
     where
-        func f g p = ((), g', reduce [o] p, SUCCESS, [o]) where
+        func f g p = ((), g', reduce [o] p, SUCCESS, []) where
             (g', o) = f g p
