@@ -26,12 +26,9 @@ import Control.Lens
 import Control.Monad.Random
 import Control.Applicative.Alternative
 
-
-
-
---https://ccrma.stanford.edu/~jos/sasp/Product_Two_Gaussian_PDFs.html
---https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables
-
+-- | Reduceable p o pairs are used for the special case of smarties behavior trees where the perception and final output type are the same.
+-- In this case, one can immediately modify the perception with the output and treat the behavior tree as a continuation or a sequential set of operations of type `o` on a value of type `p`.
+-- See 'Smarties.Builders.SelfAction'
 class Reduceable p o where
     reduce :: [o] -> p -> p
 
@@ -39,15 +36,14 @@ class Reduceable p o where
 instance Reduceable a (a->a) where
     reduce os = foldr (.) id os
 
-
+-- | status type of sequence
 data Status = SUCCESS | FAIL deriving (Eq, Show)
 
 -- |
--- TODO add a (scope :: Bool) input parameter
 data NodeSequence g p o a =  NodeSequence { runNodes :: g -> p -> (a, g, p, Status, [o]) }
 
 -- | run a node sequence tossing its monadic output
--- output is ordered from RIGHT to LEFT i.e. foldr when applying
+-- output is ordered from RIGHT to LEFT i.e. use foldr when applying
 execNodeSequence :: NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
 execNodeSequence n _g _p = (\(_,g,p,s,os)->(g,p,s,os)) $ (runNodes n) _g _p
 
