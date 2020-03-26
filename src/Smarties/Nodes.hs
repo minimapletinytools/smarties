@@ -28,7 +28,7 @@ import           Prelude                         hiding (sequence)
 
 import           Smarties.Base
 
-import           Control.Applicative.Alternative
+import           Control.Applicative
 import           Lens.Micro
 import           Control.Monad.Random            hiding (sequence)
 
