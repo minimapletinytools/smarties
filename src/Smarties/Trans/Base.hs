@@ -37,6 +37,10 @@ import Control.Applicative.Alternative
 --https://ccrma.stanford.edu/~jos/sasp/Product_Two_Gaussian_PDFs.html
 --https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables
 
+
+-- TODO change this to SelfApplicable p o
+-- selfApply :: o -> p -> p
+
 class Reduceable p o where
     reduce :: [o] -> p -> p
 

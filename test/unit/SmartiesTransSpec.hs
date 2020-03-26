@@ -6,17 +6,17 @@
 
 module SmartiesTransSpec where
 
-import Prelude hiding (sequence)
+import           Prelude                hiding (sequence)
 
-import Test.QuickCheck
-import Test.Hspec
+import           Test.Hspec
+import           Test.QuickCheck
 
-import Data.List (maximum, findIndex)
-import Data.Maybe (fromMaybe)
-import Control.Monad (liftM, liftM2, replicateM, forM_)
-import Control.Monad.Identity (runIdentity)
+import           Control.Monad          (forM_, liftM, liftM2, replicateM)
+import           Control.Monad.Identity (runIdentity)
+import           Data.List              (findIndex, maximum)
+import           Data.Maybe             (fromMaybe)
 
-import Smarties.Trans
+import           Smarties.Trans
 
 data BranchType = BrSelector | BrSequence | BrNot deriving (Show)
 
@@ -44,6 +44,7 @@ type GeneratorType = ()
 type PerceptionType = Int
 type OutputType = Int -> Int
 
+-- | adds an action that increases state by 1 (used for tracking which node was executed)
 addAction :: Int -> NodeSequence GeneratorType PerceptionType OutputType ()
 addAction n = fromAction $ SimpleAction (\_ -> (+n))
 
@@ -57,12 +58,13 @@ prop_selector_basic b = let
 -- prop_weightedSelector = True
 
 prop_utilitySelector :: [Int] -> Bool
-prop_utilitySelector w = emptyCase || otherCase where
+prop_utilitySelector w = r where
     tree = utilitySelector $ map (\n-> addAction n >> return (w!!n)) [0..(length w -1)]
     (_,p,s,os) = execNodeSequence tree () 0
     rslt = reduce os p
-    emptyCase = if length w == 0 then s == FAIL else True
-    otherCase = rslt == fromMaybe (-1) (findIndex (maximum w ==) w)
+    r = if length w == 0
+      then s == FAIL
+      else rslt == fromMaybe (-1) (findIndex (maximum w ==) w)
 
 -- prop_utilityWeightedSelector :: Bool
 -- prop_utilityWeightedSelector = True

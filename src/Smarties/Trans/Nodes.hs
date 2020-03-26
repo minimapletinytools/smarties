@@ -33,7 +33,7 @@ import           Control.Applicative.Alternative
 import           Control.Lens
 import           Control.Monad.Random            hiding (sequence)
 
-import           Data.List                       (find, maximumBy, mapAccumL)
+import           Data.List                       (find, mapAccumL, maximumBy)
 import           Data.Maybe                      (fromMaybe)
 import           Data.Ord                        (comparing)
 
@@ -128,7 +128,7 @@ result s = NodeSequenceT (\g p -> return ((), g, p, s, []))
 
 -- $conditionlink
 -- conditions
--- | has random status based on supplied chance
+-- | has random status based on input chance
 rand :: (RandomGen g, Monad m) => Float -- ^ chance of success ∈ [0,1]
     -> NodeSequenceT g p o m ()
 rand rn = do

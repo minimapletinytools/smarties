@@ -51,10 +51,11 @@ data UtilityT g p m a where
     UtilityT :: (Monad m) => (g -> p -> m (a, g)) -> UtilityT g p m a
     SimpleUtilityT :: (Monad m) => (p -> m a) -> UtilityT g p m a
 
--- | Perception modify pereption only
+-- | Perception modify perception only
 data Perception g p where
     Perception :: (g -> p -> (g, p)) -> Perception g p
     SimplePerception :: (p -> p) -> Perception g p
+    -- TODO delete this, just use Perception + Conditional, no need to combine them
     ConditionalPerception :: (g -> p -> (Bool, g, p)) -> Perception g p
 
 -- | Transformer variant
@@ -96,7 +97,7 @@ data SelfActionT g p o m where
 -- | convert UtilityT to NodeSequenceT
 fromUtilityT :: (Monad m) => UtilityT g p m a -> NodeSequenceT g p o m a
 fromUtilityT n = NodeSequenceT $ case n of
-    UtilityT f -> func f
+    UtilityT f       -> func f
     SimpleUtilityT f -> func (\g p -> f p >>= \x -> return (x, g))
     where
         func f g p = do
@@ -107,14 +108,14 @@ fromUtilityT n = NodeSequenceT $ case n of
 -- these methods convert to transformer variant
 fromUtility :: (Monad m) => Utility g p a -> NodeSequenceT g p o m a
 fromUtility n = case n of
-    Utility f -> fromUtilityT $ UtilityT (\g p -> return $ f g p)
+    Utility f       -> fromUtilityT $ UtilityT (\g p -> return $ f g p)
     SimpleUtility f -> fromUtilityT $ SimpleUtilityT (return . f)
 
 -- | converts PerceptionT to NodeSequenceT
 fromPerceptionT :: (Monad m) => PerceptionT g p m -> NodeSequenceT g p o m ()
 fromPerceptionT n = NodeSequenceT $ case n of
-    PerceptionT f -> func f
-    SimplePerceptionT f -> func (\g p -> f p >>= \x -> return (g, x))
+    PerceptionT f            -> func f
+    SimplePerceptionT f      -> func (\g p -> f p >>= \x -> return (g, x))
     ConditionalPerceptionT f -> cfunc f
     where
         func f g p = do
@@ -135,7 +136,7 @@ fromPerception n = case n of
 -- | converts ConditionT to NodeSequenceT
 fromConditionT :: (Monad m) => ConditionT g p m -> NodeSequenceT g p o m ()
 fromConditionT n = NodeSequenceT $ case n of
-    ConditionT f -> func f
+    ConditionT f       -> func f
     SimpleConditionT f -> func (\g p -> f p >>= \x -> return (x, g))
     where
         func f g p = do
@@ -146,13 +147,13 @@ fromConditionT n = NodeSequenceT $ case n of
 -- these methods convert to transformer variant
 fromCondition :: (Monad m) => Condition g p -> NodeSequenceT g p o m ()
 fromCondition n = case n of
-    Condition f -> fromConditionT $ ConditionT (\g p -> return $ f g p)
+    Condition f       -> fromConditionT $ ConditionT (\g p -> return $ f g p)
     SimpleCondition f -> fromConditionT $ SimpleConditionT (return . f)
 
 -- | converts ActionT to NodeSequenceT
 fromActionT :: (Monad m) => ActionT g p o m -> NodeSequenceT g p o m ()
 fromActionT n = NodeSequenceT $ case n of
-    ActionT f -> func f
+    ActionT f       -> func f
     SimpleActionT f -> func (\g p -> f p >>= \x -> return (g, x))
     where
         func f g p = do
@@ -164,14 +165,14 @@ fromActionT n = NodeSequenceT $ case n of
 -- these methods convert to transformer variant
 fromAction :: (Monad m) => Action g p o -> NodeSequenceT g p o m ()
 fromAction n = case n of
-    Action f -> fromActionT $ ActionT (\g p -> return $ f g p)
+    Action f       -> fromActionT $ ActionT (\g p -> return $ f g p)
     SimpleAction f -> fromActionT $ SimpleActionT (return . f)
 
 -- | converts SelftActionT to NodeSequenceT
 -- WARNING: MAY BE REMOVED IN A FUTURE RELEASE
 fromSelfActionT :: (Monad m) => SelfActionT g p o m -> NodeSequenceT g p o m ()
 fromSelfActionT n = NodeSequenceT $ case n of
-    SelfActionT f -> func f
+    SelfActionT f       -> func f
     SimpleSelfActionT f -> func (\g p -> f p >>= \x -> return (g, x))
     where
         func f g p = do
@@ -182,6 +183,7 @@ fromSelfActionT n = NodeSequenceT $ case n of
 
 -- |
 -- these methods convert to transformer variant
+-- WARNING: MAY BE REMOVED IN A FUTURE RELEASE
 fromSelfAction :: (Monad m) => SelfAction g p o -> NodeSequenceT g p o m ()
 fromSelfAction n = case n of
     SelfAction f -> fromSelfActionT $ SelfActionT (\g p -> return $ f g p)
