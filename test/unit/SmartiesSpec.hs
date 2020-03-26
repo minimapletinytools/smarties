@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 -- NOTE these tests are almost identical to the ones in SmartiesSpec

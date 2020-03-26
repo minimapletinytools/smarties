@@ -17,8 +17,6 @@ module Main where
 
 import Smarties
 import System.Random
-import System.Console.Haskeline
-import System.Exit
 import Control.Concurrent
 import Control.Monad hiding (sequence)
 import Control.Applicative ((<$>))
@@ -119,12 +117,12 @@ actionCloneSlimeRel p = do
 
 
 -- | for testing
-potatoTree :: (RandomGen g) => NodeSequence g PerceptionType ActionType ()
+potatoTree :: NodeSequence g PerceptionType ActionType ()
 potatoTree = do
   actionMoveSlimeRel (1,-1)
 
 -- | our behavior tree
-slimeTree :: (RandomGen g) => NodeSequence g PerceptionType ActionType ()
+slimeTree :: NodeSequence g PerceptionType ActionType ()
 slimeTree = do
   nbs <- getNeighborSlimes
   s <- getMyself
@@ -204,7 +202,7 @@ fuseSlimes slimes =  runST $ do
   catMaybes . V.toList <$> V.freeze grid
 
 -- | run slimeTree for each slime collecting results
-slimeCycle :: (RandomGen g) => g -> Slimes -> (g, Slimes)
+slimeCycle :: g -> Slimes -> (g, Slimes)
 slimeCycle g0 slimes = over _2 (fuseSlimes . concat) (mapAccumL runSlimeTree g0 slimes) where
   -- function to run slime tree over all slimes accumulating the RNG
   runSlimeTree g slime = (g', concat (map ($ slime) os)) where

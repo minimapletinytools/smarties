@@ -7,7 +7,6 @@ import           Control.Monad.Random
 import           Data.List            (intercalate, mapAccumL)
 import           Prelude
 import           Smarties
-import           System.Random
 
 data Pronoun = HeHim | SheHer | TheyThem | FooBar | Other | Undecided deriving (Eq, Show)
 

@@ -1,16 +1,12 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -fno-warn-type-defaults #-}
 
 module BuildersSpec where
 
-import           Prelude                hiding (sequence)
+import           Prelude       hiding (sequence)
 
+import           Control.Monad
 import           Test.Hspec
-import           Test.QuickCheck
-
-import           Control.Monad          (forM_, liftM, liftM2, replicateM)
-import           Control.Monad.Identity (runIdentity)
-import           Data.List              (findIndex, maximum)
-import           Data.Maybe             (fromMaybe)
 
 import           Smarties
 
@@ -37,10 +33,10 @@ test_fromUtility_withUtilitySelector = status `shouldBe` FAIL where
 
 
 test_fromPerception_basic :: Expectation
-test_fromPerception_basic = (p, status) `shouldBe` (3, SUCCESS) where
+test_fromPerception_basic = (finalp, status) `shouldBe` (3, SUCCESS) where
   tree1 = fromPerception $ SimplePerception (\p -> (p+1))
   tree2 = fromPerception $ Perception (\g p -> (g, p+2))
-  (_, p, status, _) = execNodeSequence (tree1 >> tree2) () 0
+  (_, finalp, status, _) = execNodeSequence (tree1 >> tree2) () 0
 
 
 test_fromCondition_basic :: Expectation

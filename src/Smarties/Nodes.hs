@@ -37,8 +37,6 @@ import           Data.Maybe                      (fromMaybe)
 import           Data.Ord                        (comparing)
 
 
-import           Debug.Trace
-
 -- $controllink
 -- control nodes
 
@@ -93,8 +91,8 @@ weightedSelector ns = NodeSequenceT func where
 -- | it's easy to forget that utility must be the last monadic return value of a NodeSequence to be understood by utility selectors
 -- this type family is used to prevent accidental usage of `instance Ord ()` in utility selectors
 type family NotUnit a where
-  NotUnit () = False
-  NotUnit a = True
+  NotUnit () = 'False
+  NotUnit a = 'True
 
 -- | returns the node sequence with maximum utility
 -- N.B. that this will dry execute ALL node sequences in the input list so be mindful of performance

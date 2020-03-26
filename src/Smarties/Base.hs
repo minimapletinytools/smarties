@@ -15,7 +15,7 @@ module Smarties.Base (
   execNodeSequenceT,
   execNodeSequenceTimesT,
   execNodeSequenceTimesFinalizeT,
-  NodeSequence(..),
+  NodeSequence,
   execNodeSequence,
   execNodeSequenceTimes,
   execNodeSequenceTimesFinalize,
@@ -57,7 +57,7 @@ newtype NodeSequenceT g p o m a =  NodeSequenceT { runNodes :: g -> p -> m (a, g
 -- | run a node sequence tossing its monadic output
 -- output is ordered from RIGHT to LEFT i.e. foldr when applying
 execNodeSequenceT :: (Monad m) => NodeSequenceT g p o m a -> g -> p -> m (g, p, Status, [o])
-execNodeSequenceT n g p = (runNodes n) g p >>= (\(_,g,p,s,os) -> return (g,p,s,os))
+execNodeSequenceT n g p = (runNodes n) g p >>= (\(_,g',p',s,os) -> return (g',p',s,os))
 
 -- | internal helper
 iterate_ :: (Monad m) => Int -> (a -> m a) -> a -> m a
@@ -100,7 +100,7 @@ getPerception = NodeSequenceT $ (\g p -> return (p, g, p, SUCCESS, []))
 
 -- | sets the perception state
 setPerception :: (Monad m) => p -> NodeSequenceT g p o m ()
-setPerception p' = NodeSequenceT $ (\g p -> return ((), g, p', SUCCESS, []))
+setPerception p' = NodeSequenceT $ (\g _ -> return ((), g, p', SUCCESS, []))
 
 -- | add to output
 tellOutput :: (Monad m) => o -> NodeSequenceT g p o m ()
@@ -111,7 +111,7 @@ getGenerator :: (Monad m) => NodeSequenceT g p o m g
 getGenerator = NodeSequenceT $ (\g p -> return (g, g, p, SUCCESS, []))
 
 -- | set the generator in the monad
-setGenerator :: (RandomGen g, Monad m) => g -> NodeSequenceT g p o m ()
+setGenerator :: (Monad m) => g -> NodeSequenceT g p o m ()
 setGenerator g = NodeSequenceT $ (\_ p -> return ((), g, p, SUCCESS, []))
 
 
