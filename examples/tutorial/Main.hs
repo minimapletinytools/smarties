@@ -140,14 +140,14 @@ runConway g0 grid = (g', V.zipWith ($) (V.fromList fns) grid) where
 -- | go!
 main :: IO ()
 main = do
-    stdgen <- getStdGen
-    let
-        genesis = V.fromList . take numberCells $ randoms stdgen
-        cycleOnce (n :: Int) (g, s) = do
-            putStrLn "done"
-            printf "gen %d\n" n
-            putStrLn $ renderGrid s
-            let (g',s') = runConway g s
-            threadDelay 100000
-            cycleOnce (n+1) (g',s')
-    cycleOnce 0 (stdgen, genesis)
+  stdgen <- getStdGen
+  let
+    genesis = V.fromList . take numberCells $ randoms stdgen
+    cycleOnce (n :: Int) (g, s) = do
+      putStrLn "done"
+      printf "gen %d\n" n
+      putStrLn $ renderGrid s
+      let (g',s') = runConway g s
+      threadDelay 100000
+      cycleOnce (n+1) (g',s')
+  cycleOnce 0 (stdgen, genesis)
