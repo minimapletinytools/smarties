@@ -39,9 +39,6 @@ import           Smarties.Trans.Base
 -- helpers for building NodeSequenceT out of functions
 
 -- | Utility return utility only
--- we could also do
--- 'type Utility g p a = UtilityT g p Identity a'
--- but this breaks interface compatability with Smarties.Builders by changing the constructor names
 data Utility g p a where
     Utility :: (g -> p -> (a, g)) -> Utility g p a
     SimpleUtility :: (p -> a) -> Utility g p a
