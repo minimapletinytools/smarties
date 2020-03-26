@@ -49,7 +49,6 @@ library:
   source-dirs: src
   exposed-modules:
     - Smarties
-    - Smarties.Trans
 
 executables:
   pronouns:

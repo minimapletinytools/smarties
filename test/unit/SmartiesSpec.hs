@@ -1,6 +1,9 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 {-# LANGUAGE TemplateHaskell #-}
 
+-- NOTE these tests are almost identical to the ones in SmartiesSpec
+-- I wish there was a nice way to reuse code here :\
+
 module SmartiesSpec where
 
 import           Prelude                hiding (sequence)
@@ -48,7 +51,7 @@ addAction n = fromAction $ SimpleAction (\_ -> (+n))
 prop_selector_basic :: Bool -> Bool
 prop_selector_basic b = let
     tree = selector [result FAIL, result FAIL, result FAIL, result FAIL, result FAIL, result FAIL, result FAIL, result (if b then SUCCESS else FAIL)]
-    (_,_,_,s,_) = (runNodes tree) () ()
+    (_,_,_,s,_) = runIdentity $ (runNodes tree) () ()
     in if b then s == SUCCESS else s == FAIL
 
 -- prop_weightedSelector :: Bool

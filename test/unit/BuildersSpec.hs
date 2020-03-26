@@ -12,7 +12,7 @@ import           Control.Monad.Identity (runIdentity)
 import           Data.List              (findIndex, maximum)
 import           Data.Maybe             (fromMaybe)
 
-import           Smarties.Trans
+import           Smarties
 
 
 test_fromUtility_basic :: Expectation
