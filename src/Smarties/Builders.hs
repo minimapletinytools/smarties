@@ -157,13 +157,15 @@ fromActionT n = NodeSequenceT $ case n of
             (g', o) <- f g p
             return ((), g', p, SUCCESS, [o])
 
-
 -- |
 -- these methods convert to transformer variant
 fromAction :: (Monad m) => Action g p o -> NodeSequenceT g p o m ()
 fromAction n = case n of
     Action f       -> fromActionT $ ActionT (\g p -> return $ f g p)
     SimpleAction f -> fromActionT $ SimpleActionT (return . f)
+
+
+
 
 -- | converts SelftActionT to NodeSequenceT
 -- WARNING: MAY BE REMOVED IN A FUTURE RELEASE
@@ -175,8 +177,6 @@ fromSelfActionT n = NodeSequenceT $ case n of
         func f g p = do
             (g', o) <- f g p
             return ((), g', apply o p, SUCCESS, [o])
-
-
 
 -- |
 -- these methods convert to transformer variant
