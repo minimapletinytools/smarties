@@ -51,7 +51,7 @@ instance Reduceable a (a->a) where
 
 data Status = SUCCESS | FAIL deriving (Eq, Show)
 
--- |
+-- TODO rename runNodes to runNodeSequenceT
 newtype NodeSequenceT g p o m a =  NodeSequenceT { runNodes :: g -> p -> m (a, g, p, Status, [o]) }
 
 -- | run a node sequence tossing its monadic output
@@ -145,24 +145,29 @@ instance (Applicative m, Monad m) => Alternative (NodeSequenceT g p o m) where
         func g p = return (error "trying to pull value from a guard", g, p, FAIL, [])
     a <|> b = a >>= \_ -> b
 
--- |
--- note this looks a lot like (StateT (g,p) Writer o) but has special functionality built in
+-- | note this looks a lot like (StateT (g,p) Writer o) but has special functionality built in on FAIL
 -- note, I'm pretty sure this does not satisfy monad laws
 instance (Monad m) => Monad (NodeSequenceT g p o m) where
-    -- should only ever be used by sequence type nodes
     (>>=) :: NodeSequenceT g p o m a -> (a -> NodeSequenceT g p o m b) -> NodeSequenceT g p o m b
     NodeSequenceT n >>= f = NodeSequenceT func where
-        -- if we fail, abort the update but pass on the output and state vars
-        -- otherwise keep going
         func g p = do
+            -- evaluate the node
             (a, g', p', s, os) <- n g p
             let
                 NodeSequenceT n' = f a -- generate the next node
             rslt <- (n' g' p') -- run the next node
             let
                 keepGoing = over _5 (++os) rslt
-                (b,_,_,_,_) = keepGoing
-            if s == FAIL then return (b, g', p, FAIL, os) else return keepGoing where
+                (b,g'',_,_,_) = keepGoing
+            if s == FAIL
+              -- if the current node is FAIL:
+                -- status is FAIL
+                -- perception is input perception
+                -- output is empty
+                -- rng is accumulated rng from next monad
+                -- return monadic return value by dry executing the next monad (passing through updated perception and )
+              then return (b, g'', p, FAIL, [])
+              else return keepGoing where
 
 
 instance MonadTrans (NodeSequenceT g p o) where

@@ -38,6 +38,8 @@ import           Data.Maybe                      (fromMaybe)
 import           Data.Ord                        (comparing)
 
 
+import           Debug.Trace
+
 -- $controllink
 -- control nodes
 
@@ -46,7 +48,7 @@ import           Data.Ord                        (comparing)
 --sequence :: NodeSequenceT g p o m a -> NodeSequenceT g p o m a
 --sequence = id
 
-
+-- monadic mapAccumR
 mapAccumRM :: (Monad m) => (acc -> x -> m (acc, y)) -> acc -> [x] -> m (acc, [y])
 mapAccumRM f acc_ xs = foldr mapAccumM_ (return (acc_, [])) xs where
     mapAccumM_ x prev = do
@@ -54,6 +56,9 @@ mapAccumRM f acc_ xs = foldr mapAccumM_ (return (acc_, [])) xs where
         (acc', y) <- f acc x
         return (acc', ys ++ [y])
 
+-- run a node sequence and return its accumulated generator
+-- this is used to mapAccumR over [NodeSequenceT] passing generator through
+-- TODO rename this function
 mapAccumNodeSequenceT :: (Monad m) => p -> g -> NodeSequenceT g p o m a -> m (g, (a, g, p, Status, [o]))
 mapAccumNodeSequenceT p acc x = do
     r <- (runNodes x) acc p
@@ -86,18 +91,26 @@ weightedSelector ns = NodeSequenceT func where
         (msn, g') = weightedSelection g ns
         selectedNode = fromMaybe empty msn
 
--- |
-utilitySelector :: (Ord a, Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
+-- | it's easy to forget that utility must be the last monadic return value of a NodeSequence to be understood by utility selectors
+-- this type family is used to prevent accidental usage of `instance Ord ()` in utility selectors
+type family NotUnit a where
+  NotUnit () = False
+  NotUnit a = True
+
+-- | returns the node sequence with maximum utility
+-- N.B. that this will dry execute ALL node sequences in the input list so be mindful of performance
+-- However any side effects will not be reverted either so avoid Nodes with mutable writes inside of utilitySelector!!!
+utilitySelector :: (Ord a, NotUnit a ~ 'True, Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
 utilitySelector ns = NodeSequenceT func where
     func g p = do
         (g', rslts) <- mapAccumRM (mapAccumNodeSequenceT p) g ns
-        let compfn = (\(a,_,_,_,_)->a)
+        let compfn = (\(a,_,_,_,_)-> a)
         if null ns
             then return (error "utilitySelector: no children",g',p,FAIL,[])
             else return $ maximumBy (comparing compfn) rslts
 
 -- |
-utilityWeightedSelector :: (RandomGen g, Random a, Num a, Ord a, Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
+utilityWeightedSelector :: (RandomGen g, Random a, Num a, Ord a, NotUnit a ~ 'True, Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
 utilityWeightedSelector ns = NodeSequenceT func where
     func g p = do
         (g', rslts) <- mapAccumRM (mapAccumNodeSequenceT p) g ns
@@ -119,6 +132,9 @@ flipResult n = NodeSequenceT func where
             rslt <- runNodes n g p
             return $ over _4 flipr rslt
 
+-- this is fine and all except if this occurs after a FAILed NodeSequence it will still output so make sure you clearly document that this is the case and why
+--traceNode :: (Monad m) => String -> NodeSequenceT g p o m ()
+--traceNode msg = NodeSequenceT (\g p -> trace msg $ return ((), g, p, SUCCESS, []))
 
 -- $actionlink
 -- actions
