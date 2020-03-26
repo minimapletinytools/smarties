@@ -23,7 +23,8 @@ import Control.Concurrent
 import Control.Monad hiding (sequence)
 import Control.Applicative ((<$>))
 import Control.Monad.ST
-import Control.Lens
+import Lens.Micro
+import Lens.Micro.TH
 import Prelude hiding (sequence)
 import Data.List
 import Data.List.Index (ifoldl)

@@ -1,6 +1,6 @@
--remove reduceale and change to selfactionable or something
--switch non trans implementation to use the trans one
-  -why did you make a separate non-trans package?
--switch to smaller lens package
+DONE-switch to smaller lens package
+DONE-remove reduceale and change to selfactionable or something
+DONE-switch non trans implementation to use the trans one
+  IDK-why did you make a separate non-trans package?
 IGNORE/DONE-there are some NodeSequences in Base.h needed for stuff. include them in nodes export
 IGNORE/DONE-explore renaming Builders to not use T to remove boiler plate code ensuring compatibility e.g. Utility instead of UtilityT

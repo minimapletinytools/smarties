@@ -27,7 +27,7 @@ module Smarties.Base (
     -- $helperlink
 ) where
 
-import Control.Lens
+import Lens.Micro
 import Control.Monad.Random
 import Control.Monad.Identity (Identity, runIdentity)
 import Control.Applicative.Alternative

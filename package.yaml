@@ -20,7 +20,8 @@ dependencies:
 - mtl
 - QuickCheck >= 2.11
 - random
-- lens
+- microlens
+- microlens-th
 - MonadRandom
 - monadplus
 - text
