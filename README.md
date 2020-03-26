@@ -55,7 +55,7 @@ Smarties provides the `Smarties.Builders` module for building your own logic nod
 
 Each builder (except for `Perception`) has a simple variant (prefixed by `Simple`) which ensures the **perception** is immutable. You'll want to use the simple variants in most cases.
 
-To keep the syntax simple in most cases, there are non-mtl variants of each builder which wrap the mtl ones.
+To keep the syntax simple in most cases, there are non-transformer variants of each builder which wrap the transformer ones.
 
 ## Other
 - Smarties gives access to the (rather simple) BT control methods in `Smarties.Nodes`. Most of its power comes from the flexibility of monadic syntax. In some cases, it may be better/simpler to use something like **StateT (p,g) Writer [o]**. Sequence and selectors are still possible with monadic operations like [`ifM`](https://hackage.haskell.org/package/extra-1.7.1/docs/Control-Monad-Extra.html).
@@ -65,4 +65,4 @@ Some ideas for features to add to this package. I'll probably never get to these
 
 - Built in support for [Statistic.Distribution.Normal](https://hackage.haskell.org/package/statistics-0.14.0.2/docs/Statistics-Distribution-Normal.html) for modeling risk reward. This includes [basic](https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables) [operations](https://ccrma.stanford.edu/~jos/sasp/Product_Two_Gaussian_PDFs.html) on distributions.
 
-- It is possible to modify **perception** during tree execution. This is only recommended in the special case where the input state is same as what the tree is operating on as a whole in which case the tree represents a sequential set of operations on a value. e.g. **NodeSequnce g Int (Int->Int)** represents operations on an Int value. In these cases, ensure the **SelfActionable p o** constraint is satisfied and use **SelfAction** which is the same as **Action** except also applies the output to the perception. The current implementation is a little idiosyncratic and I may remove in the future so it's metioned here for now.
+- It is possible to modify **perception** during tree execution. This is only recommended in the special case where the input state is same as what the tree is operating on as a whole in which case the tree represents a sequential set of operations on a value. e.g. **NodeSequence g Int (Int->Int)** represents operations on an Int value. In these cases, ensure the **SelfActionable p o** constraint is satisfied and use **SelfAction** which is the same as **Action** except also applies the output to the perception. The current implementation is a little idiosyncratic and I may remove in the future so it's mentioned here for now.
