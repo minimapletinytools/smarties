@@ -8,23 +8,23 @@ Stability   : experimental
 -}
 
 module Smarties.Base (
-    SelfActionable(..),
-    reduce,
-    Status(..),
-    NodeSequenceT(..),
-    execNodeSequenceT,
-    execNodeSequenceTimesT,
-    execNodeSequenceTimesFinalizeT,
-    NodeSequence(..),
-    execNodeSequence,
-    execNodeSequenceTimes,
-    execNodeSequenceTimesFinalize,
-    getPerception,
-    setPerception,
-    tellOutput,
-    getGenerator,
-    setGenerator
-    -- $helperlink
+  SelfActionable(..),
+  reduce,
+  Status(..),
+  NodeSequenceT(..),
+  execNodeSequenceT,
+  execNodeSequenceTimesT,
+  execNodeSequenceTimesFinalizeT,
+  NodeSequence(..),
+  execNodeSequence,
+  execNodeSequenceTimes,
+  execNodeSequenceTimesFinalize,
+  getPerception,
+  setPerception,
+  tellOutput,
+  getGenerator,
+  setGenerator
+  -- $helperlink
 ) where
 
 import Lens.Micro
@@ -39,11 +39,11 @@ import Control.Applicative.Alternative
 --https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables
 
 class SelfActionable p o where
-    apply :: o -> p -> p
+  apply :: o -> p -> p
 
 -- probably {-# OVERLAPPABLE #-}
 instance SelfActionable a (a->a) where
-    apply = ($)
+  apply = ($)
 
 -- | reduce a list of actions and apply it the perception
 reduce :: (SelfActionable p o) => [o] -> p -> p
@@ -66,13 +66,13 @@ iterate_ n f = foldr (>=>) return (replicate n f)
 -- | run a node sequence several times using its output to generate the next perception state
 execNodeSequenceTimesT :: (SelfActionable p o, Monad m) => Int -> NodeSequenceT g p o m a -> g -> p -> m (g, p, Status, [o])
 execNodeSequenceTimesT num n _g _p = iterate_ num itfun (_g, _p, SUCCESS, []) where
-    itfun (g,p,_,os) = execNodeSequenceT n g (reduce os p)
+  itfun (g,p,_,os) = execNodeSequenceT n g (reduce os p)
 
 -- | same as runNodeSequenceTimes except reduces the final input with its output and only returns this result
 execNodeSequenceTimesFinalizeT :: (SelfActionable p o, Monad m) => Int -> NodeSequenceT g p o m a -> g -> p -> m p
 execNodeSequenceTimesFinalizeT num n _g _p = do
-    (_,p,_,os) <- execNodeSequenceTimesT num n _g _p
-    return $ reduce os p
+  (_,p,_,os) <- execNodeSequenceTimesT num n _g _p
+  return $ reduce os p
 
 -- $nontransformerlink
 
@@ -121,72 +121,72 @@ setGenerator g = NodeSequenceT $ (\_ p -> return ((), g, p, SUCCESS, []))
 -- |
 -- it's possible to do this without Monad m restriction, but reusing >>= is better
 instance (Functor m, Monad m) => Functor (NodeSequenceT g p o m) where
-    fmap :: (a -> b) -> NodeSequenceT g p o m a -> NodeSequenceT g p o m b
-    fmap f n = do
-        a <- n
-        return $ f a
-    --fmap f n = NodeSequenceT func where
-    --    func g_ p_ = fmap f' ((runNodes n) g_ p_) where
-    --        f' (a, g, p, s, os) = (f a, g, p, s, os)
+  fmap :: (a -> b) -> NodeSequenceT g p o m a -> NodeSequenceT g p o m b
+  fmap f n = do
+    a <- n
+    return $ f a
+  --fmap f n = NodeSequenceT func where
+  --    func g_ p_ = fmap f' ((runNodes n) g_ p_) where
+  --        f' (a, g, p, s, os) = (f a, g, p, s, os)
 
 
 -- |
 -- it's possible to do this without Monad m restriction, but reusing >>= is better
 instance (Applicative m, Monad m) => Applicative (NodeSequenceT g p o m) where
-    pure a = NodeSequenceT (\g p -> pure (a, g, p, SUCCESS, []))
-    liftA2 f n1 n2 = do
-        a <- n1
-        b <- n2
-        return $ f a b
+  pure a = NodeSequenceT (\g p -> pure (a, g, p, SUCCESS, []))
+  liftA2 f n1 n2 = do
+    a <- n1
+    b <- n2
+    return $ f a b
 
 instance (Applicative m, Monad m) => Alternative (NodeSequenceT g p o m) where
-    --empty :: NodeSequenceT g p o m a
-    empty = NodeSequenceT func where
-        func g p = return (error "trying to pull value from a guard", g, p, FAIL, [])
-    a <|> b = a >>= \_ -> b
+  --empty :: NodeSequenceT g p o m a
+  empty = NodeSequenceT func where
+    func g p = return (error "trying to pull value from a guard", g, p, FAIL, [])
+  a <|> b = a >>= \_ -> b
 
 -- | note this looks a lot like (StateT (g,p) Writer o) but has special functionality built in on FAIL
 -- note, I'm pretty sure this does not satisfy monad laws
 instance (Monad m) => Monad (NodeSequenceT g p o m) where
-    (>>=) :: NodeSequenceT g p o m a -> (a -> NodeSequenceT g p o m b) -> NodeSequenceT g p o m b
-    NodeSequenceT n >>= f = NodeSequenceT func where
-        func g p = do
-            -- evaluate the node
-            (a, g', p', s, os) <- n g p
-            let
-                NodeSequenceT n' = f a -- generate the next node
-            rslt <- (n' g' p') -- run the next node
-            let
-                keepGoing = over _5 (++os) rslt
-                (b,g'',_,_,_) = keepGoing
-            if s == FAIL
-              -- if the current node is FAIL:
-                -- status is FAIL
-                -- perception is input perception
-                -- output is empty
-                -- rng is accumulated rng from next monad
-                -- return monadic return value by dry executing the next monad (passing through updated perception and )
-              then return (b, g'', p, FAIL, [])
-              else return keepGoing where
+  (>>=) :: NodeSequenceT g p o m a -> (a -> NodeSequenceT g p o m b) -> NodeSequenceT g p o m b
+  NodeSequenceT n >>= f = NodeSequenceT func where
+    func g p = do
+      -- evaluate the node
+      (a, g', p', s, os) <- n g p
+      let
+        NodeSequenceT n' = f a -- generate the next node
+      rslt <- (n' g' p') -- run the next node
+      let
+        keepGoing = over _5 (++os) rslt
+        (b,g'',_,_,_) = keepGoing
+      if s == FAIL
+       -- if the current node is FAIL:
+        -- status is FAIL
+        -- perception is input perception
+        -- output is empty
+        -- rng is accumulated rng from next monad
+        -- return monadic return value by dry executing the next monad (passing through updated perception and )
+       then return (b, g'', p, FAIL, [])
+       else return keepGoing where
 
 
 instance MonadTrans (NodeSequenceT g p o) where
-    lift m = NodeSequenceT (\g p -> m >>= (\a -> return (a, g, p, SUCCESS,[])))
+  lift m = NodeSequenceT (\g p -> m >>= (\a -> return (a, g, p, SUCCESS,[])))
 
 
 instance (RandomGen g, Monad m) => MonadRandom (NodeSequenceT g p o m) where
-    -- TODO
-    getRandoms = undefined
-    getRandomRs _ = undefined
-    getRandom = do
-        g <- getGenerator
-        let
-            (a, g') = random g
-        setGenerator g'
-        return a
-    getRandomR r = do
-        g <- getGenerator
-        let
-            (a, g') = randomR r g
-        setGenerator g'
-        return a
+  -- TODO
+  getRandoms = undefined
+  getRandomRs _ = undefined
+  getRandom = do
+    g <- getGenerator
+    let
+      (a, g') = random g
+    setGenerator g'
+    return a
+  getRandomR r = do
+    g <- getGenerator
+    let
+      (a, g') = randomR r g
+    setGenerator g'
+    return a
