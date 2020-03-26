@@ -9,15 +9,15 @@ Stability   : experimental
 
 module Main where
 
-import Smarties
-import System.Random
-import Control.Concurrent
-import Control.Monad hiding (sequence)
-import Prelude hiding (sequence)
-import Data.List
-import Data.List.Index (ifoldl)
-import qualified Data.Vector as V
-import Text.Printf
+import           Control.Concurrent
+import           Control.Monad      hiding (sequence)
+import           Data.List
+import           Data.List.Index    (ifoldl)
+import qualified Data.Vector        as V
+import           Prelude            hiding (sequence)
+import           Smarties
+import           System.Random
+import           Text.Printf
 
 -- world size parameters
 width :: Int
@@ -53,40 +53,40 @@ countTrue = foldl (\acc x -> if x then acc+1 else acc) 0
 
 -- behavior tree types
 type Grid = V.Vector Bool
-type TreeStateType = (Pos, Grid)
+type PerceptionType = (Pos, Grid)
 type ActionType = Bool
 
 -- behavior tree methods
-countNeighbors  :: NodeSequence g TreeStateType ActionType Int
+countNeighbors  :: NodeSequence g PerceptionType ActionType Int
 countNeighbors = do
   (pos, grid) <- getPerception
   return . countTrue . map ((grid V.!) . wrapFlattenCoords . addPos pos) $ neighbors
 
-ifNeighborsMoreThan :: Int -> NodeSequence g TreeStateType ActionType ()
+ifNeighborsMoreThan :: Int -> NodeSequence g PerceptionType ActionType ()
 ifNeighborsMoreThan x = do
   n <- countNeighbors
   condition (n > x)
 
-ifNeighborsLessThan :: Int -> NodeSequence g TreeStateType ActionType ()
+ifNeighborsLessThan :: Int -> NodeSequence g PerceptionType ActionType ()
 ifNeighborsLessThan = flipResult . ifNeighborsMoreThan . (\x -> x-1)
 
-die :: NodeSequence g TreeStateType ActionType ()
+die :: NodeSequence g PerceptionType ActionType ()
 die = fromAction $ SimpleAction (\_ -> False)
 
-born :: NodeSequence g TreeStateType ActionType ()
+born :: NodeSequence g PerceptionType ActionType ()
 born = fromAction $ SimpleAction (\_ -> True)
 
-ifAlive :: NodeSequence g TreeStateType ActionType ()
+ifAlive :: NodeSequence g PerceptionType ActionType ()
 ifAlive = do
   (pos, grid) <- getPerception
   condition $ grid V.! (wrapFlattenCoords pos)
 
-ifDead :: NodeSequence g TreeStateType ActionType ()
+ifDead :: NodeSequence g PerceptionType ActionType ()
 ifDead = flipResult $ ifAlive
 
 -- | our behavior tree
 -- note rule 2. is a just a noop (Any live cell with two or three live neighbors lives on to the next generation.)
-conwayTree :: NodeSequence g TreeStateType ActionType ()
+conwayTree :: NodeSequence g PerceptionType ActionType ()
 conwayTree = do
   selector [
     -- rule 1. Any live cell with fewer than two live neighbors dies, as if by underpopulation.
@@ -107,7 +107,7 @@ conwayTree = do
       born]
 
 -- useful for testing :)
-potatoTree :: NodeSequence g TreeStateType ActionType ()
+potatoTree :: NodeSequence g PerceptionType ActionType ()
 potatoTree = do
   selector [
     do
@@ -124,7 +124,7 @@ renderGrid = Data.List.Index.ifoldl func "" . V.toList where
     func acc i x = output where
         nl = if (i+1) `mod` width == 0 then "\n" else ""
         se = case x of
-            True -> "😱"
+            True  -> "😱"
             False -> "🌱"
         output = printf "%s%s%s" acc se nl
 

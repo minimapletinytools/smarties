@@ -1,25 +1,25 @@
-{-# LANGUAGE TypeSynonymInstances           #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 
 module Main where
 
 
-import Smarties
-import System.Random
-import Control.Monad.Random
-import Prelude
-import Data.List (mapAccumL, intercalate)
+import           Control.Monad.Random
+import           Data.List            (intercalate, mapAccumL)
+import           Prelude
+import           Smarties
+import           System.Random
 
 data Pronoun = HeHim | SheHer | TheyThem | FooBar | Other | Undecided deriving (Eq, Show)
 
 data Student = Student {
-    assignedPronoun :: Pronoun,
+    assignedPronoun  :: Pronoun,
     preferredPronoun :: Pronoun,
-    openlyChange :: Bool,
-    jeans :: Int
+    openlyChange     :: Bool,
+    jeans            :: Int
 } deriving (Show)
 
 type School = [Student]
-type SchoolTreeState = (School, Student)
+type PerceptionType = (School, Student)
 type ActionType = (Student -> Student)
 
 assignedPronounIs :: Pronoun -> Student -> Bool
@@ -61,27 +61,27 @@ dogmaticBeliefInBinaryBiologicalDeterminism s = b s && not (chromeNeither s) whe
 toZeroOne :: Bool -> Float
 toZeroOne x = if x then 1.0 else 0.0
 
-actionChangePronoun :: Pronoun -> NodeSequence g SchoolTreeState ActionType ()
+actionChangePronoun :: Pronoun -> NodeSequence g PerceptionType ActionType ()
 actionChangePronoun p = fromAction $
     SimpleAction (\_ -> (\(Student a _ _ d) -> Student a p True d))
 
-actionChangeBack :: NodeSequence g SchoolTreeState ActionType ()
+actionChangeBack :: NodeSequence g PerceptionType ActionType ()
 actionChangeBack = fromAction $
     SimpleAction (\_ -> (\(Student a _ c d) -> Student a a c d))
 
-conditionHasProperty :: (Student -> Bool) -> NodeSequence g SchoolTreeState ActionType ()
+conditionHasProperty :: (Student -> Bool) -> NodeSequence g PerceptionType ActionType ()
 conditionHasProperty f = fromCondition $
     SimpleCondition (\(_, st) -> f st)
 
-utilityProperty :: (Student -> Float) -> NodeSequence g SchoolTreeState ActionType Float
+utilityProperty :: (Student -> Float) -> NodeSequence g PerceptionType ActionType Float
 utilityProperty f = fromUtility $
     SimpleUtility (\(_, st) -> f st)
 
-utilityNormalness :: (Student -> Float) -> NodeSequence g SchoolTreeState ActionType Float
+utilityNormalness :: (Student -> Float) -> NodeSequence g PerceptionType ActionType Float
 utilityNormalness f = fromUtility $
     SimpleUtility (\(sc, _) -> (sum (map f sc)) / fromIntegral (length sc))
 
-studentTree :: (RandomGen g) => NodeSequence g SchoolTreeState ActionType Float
+studentTree :: (RandomGen g) => NodeSequence g PerceptionType ActionType Float
 studentTree = utilityWeightedSelector
     [return . (*0.2) . (+0.01) =<< utilityWeightedSelector
         [do

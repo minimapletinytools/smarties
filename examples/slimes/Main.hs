@@ -70,60 +70,60 @@ wrapFlattenCoords (x,y) = (y `mod` height) * width + x `mod` width
 -- behavior tree types
 type Slimes = [Slime]
 type SlimeGrid = V.Vector (Maybe Slime)
-type TreeStateType = (SlimeGrid, Slime)
+type PerceptionType = (SlimeGrid, Slime)
 
 -- slime action is a little weird, for example if the output is [\x->[x],\x->[x]] this will actually make 2 copies of the slime in the same spot.
 type ActionType = (Slime -> Slimes)
 
 -- | extract slime that is being operated on from behavior tree perception
-getMyself :: NodeSequence g TreeStateType ActionType Slime
+getMyself :: NodeSequence g PerceptionType ActionType Slime
 getMyself = do
     (_, s) <- getPerception
     return s
 
 -- | extract a neighboring slime
-getSlimeRel :: Pos -> NodeSequence g TreeStateType ActionType (Maybe Slime)
+getSlimeRel :: Pos -> NodeSequence g PerceptionType ActionType (Maybe Slime)
 getSlimeRel p = do
     (grid, _) <- getPerception
     return $ grid V.! wrapFlattenCoords p
 
 -- | get a list of neigboring slimes
-getNeighborSlimes :: NodeSequence g TreeStateType ActionType Slimes
+getNeighborSlimes :: NodeSequence g PerceptionType ActionType Slimes
 getNeighborSlimes = do
     (grid, s) <- getPerception
     return . mapMaybe ((grid V.!) . wrapFlattenCoords . addPos (_pos s)) $ neighbors
 
 -- behavior tree nodes
 -- DELETE
-conditionSlimeIsFeeling :: Feelings -> Slime -> NodeSequence g TreeStateType ActionType ()
+conditionSlimeIsFeeling :: Feelings -> Slime -> NodeSequence g PerceptionType ActionType ()
 conditionSlimeIsFeeling f s = fromCondition $
     SimpleCondition (\_ -> _feeling s == f)
 
-actionMoveSlime :: Pos -> NodeSequence g TreeStateType ActionType ()
+actionMoveSlime :: Pos -> NodeSequence g PerceptionType ActionType ()
 actionMoveSlime p = fromAction $
     SimpleAction (\_ -> \s -> [set pos (wrapCoords p) s])
 
 -- |
-actionMoveSlimeRel :: Pos -> NodeSequence g TreeStateType ActionType ()
+actionMoveSlimeRel :: Pos -> NodeSequence g PerceptionType ActionType ()
 actionMoveSlimeRel p = fromAction $
     SimpleAction (\_ -> \s -> [over pos (wrapCoords . addPos p) s])
 
-actionSlime :: NodeSequence g TreeStateType ActionType ()
+actionSlime :: NodeSequence g PerceptionType ActionType ()
 actionSlime = actionMoveSlimeRel (0,0)
 
-actionCloneSlimeRel :: Pos -> NodeSequence g TreeStateType ActionType ()
+actionCloneSlimeRel :: Pos -> NodeSequence g PerceptionType ActionType ()
 actionCloneSlimeRel p = do
     actionMoveSlimeRel p
     actionSlime
 
 
 -- | for testing
-potatoTree :: (RandomGen g) => NodeSequence g TreeStateType ActionType ()
+potatoTree :: (RandomGen g) => NodeSequence g PerceptionType ActionType ()
 potatoTree = do
   actionMoveSlimeRel (1,-1)
 
 -- | our behavior tree
-slimeTree :: (RandomGen g) => NodeSequence g TreeStateType ActionType ()
+slimeTree :: (RandomGen g) => NodeSequence g PerceptionType ActionType ()
 slimeTree = do
     nbs <- getNeighborSlimes
     s <- getMyself
