@@ -8,7 +8,8 @@ Stability   : experimental
 -}
 
 module Smarties.Base (
-    Reduceable(..),
+    SelfActionable(..),
+    reduce,
     Status(..),
     NodeSequenceT(..),
     execNodeSequenceT,
@@ -37,17 +38,16 @@ import Control.Applicative.Alternative
 --https://ccrma.stanford.edu/~jos/sasp/Product_Two_Gaussian_PDFs.html
 --https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables
 
-
--- TODO change this to SelfApplicable p o
--- selfApply :: o -> p -> p
-
-class Reduceable p o where
-    reduce :: [o] -> p -> p
+class SelfActionable p o where
+    apply :: o -> p -> p
 
 -- probably {-# OVERLAPPABLE #-}
-instance Reduceable a (a->a) where
-    reduce os = foldr (.) id os
+instance SelfActionable a (a->a) where
+    apply = ($)
 
+-- | reduce a list of actions and apply it the perception
+reduce :: (SelfActionable p o) => [o] -> p -> p
+reduce os p = foldr apply p os
 
 data Status = SUCCESS | FAIL deriving (Eq, Show)
 
@@ -64,12 +64,12 @@ iterate_ :: (Monad m) => Int -> (a -> m a) -> a -> m a
 iterate_ n f = foldr (>=>) return (replicate n f)
 
 -- | run a node sequence several times using its output to generate the next perception state
-execNodeSequenceTimesT :: (Reduceable p o, Monad m) => Int -> NodeSequenceT g p o m a -> g -> p -> m (g, p, Status, [o])
+execNodeSequenceTimesT :: (SelfActionable p o, Monad m) => Int -> NodeSequenceT g p o m a -> g -> p -> m (g, p, Status, [o])
 execNodeSequenceTimesT num n _g _p = iterate_ num itfun (_g, _p, SUCCESS, []) where
     itfun (g,p,_,os) = execNodeSequenceT n g (reduce os p)
 
 -- | same as runNodeSequenceTimes except reduces the final input with its output and only returns this result
-execNodeSequenceTimesFinalizeT :: (Reduceable p o, Monad m) => Int -> NodeSequenceT g p o m a -> g -> p -> m p
+execNodeSequenceTimesFinalizeT :: (SelfActionable p o, Monad m) => Int -> NodeSequenceT g p o m a -> g -> p -> m p
 execNodeSequenceTimesFinalizeT num n _g _p = do
     (_,p,_,os) <- execNodeSequenceTimesT num n _g _p
     return $ reduce os p
@@ -84,11 +84,11 @@ execNodeSequence :: NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
 execNodeSequence n g p = runIdentity $ execNodeSequenceT n g p
 
 -- |
-execNodeSequenceTimes :: (Reduceable p o) => Int -> NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
+execNodeSequenceTimes :: (SelfActionable p o) => Int -> NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
 execNodeSequenceTimes num n g p = runIdentity $ execNodeSequenceTimesT num n g p
 
 -- |
-execNodeSequenceTimesFinalize :: (Reduceable p o) => Int -> NodeSequence g p o a -> g -> p -> p
+execNodeSequenceTimesFinalize :: (SelfActionable p o) => Int -> NodeSequence g p o a -> g -> p -> p
 execNodeSequenceTimesFinalize num n g p = runIdentity $ execNodeSequenceTimesFinalizeT num n g p
 
 -- $helperlink

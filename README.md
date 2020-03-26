@@ -8,8 +8,8 @@ Behavior trees are written in a DSL built with the **NodeSequence** monad. Monad
 To jump right in, please see the this tutorial example implementing [Conway's Game of Life](https://github.com/pdlla/smarties/tree/master/examples/tutorial). There are other examples in the examples folder that I either put in too little or too much effort.
 
 ## Terminology
-- **perception**: input and computation state of the behavior tree. Named perception because it represents how the tree perceives the outside world. In the current implementation it's possible to write nodes that modify **perception** but this is not recommended and this feature may be removed in a future release.
-- **seqence**: control node that executes each child node in sequence until it hits a FAIL node and collects all output.
+- **perception**: input and computation state of the behavior tree. Named perception because it represents how the tree perceives the outside world. It's possible to write nodes that modify **perception** so that your behavior tree has mutable perception (or state). Since you are already writing in Haskell, you probably don't ever want to do this. In this case, use the **Simple** builder variants when making your nodes to ensure the perception is not changed.
+- **sequence**: control node that executes each child node in sequence until it hits a FAIL node and collects all output.
 - **selector**: control node that executes the first SUCCESS node.
 - **utility**: optional monadic output for a node that can be used for more complex control flow. For example **utilitySelector** executes the node that has the largest utility.
 
@@ -28,9 +28,9 @@ The sequence represents a computation that takes a generator and perception and 
 - **g**: random generator
 - **p**: perception type
 - **Status**: Status of executing NodeSequence, either **SUCCESS** or **FAIL**
-- **o**: output type
+- **o**: output type (or action type)
 
-**NodeSequence** looks a lot like **StateT (p,g) Writer [o]** except with an additional Status output. The difference is that with each **>>=** if the input computation has Status **FAIL**, the monad will stop passing on **p** and appending to **[o]**. Note that it will continue to pass through **g** and evaluate the monadic return value **a**. Thus running **NodeSequence** produces an **a** and two thunks representing the collected state and output up until the first **FAIL**.
+**NodeSequence** looks a lot like **StateT (p,g) Writer [o]** except with an additional Status output. The difference is that with each **>>=** if the input computation has Status **FAIL**, the monad will stop accumulating changes on **p** and appending to **[o]**. Note that it will continue to pass through **p** and **g** to evaluate the monadic return value **a** which is needed for things like utility selectors. Thus running **NodeSequence** produces an **a** and two thunks representing the perception and output up until the first **FAIL**.
 
 The monadic return value is useful for passing general information between nodes. For example it's possible to implement loops:
 
@@ -46,8 +46,6 @@ howQueerIsMyFriend = sequence $ do
 ```
 
 ## Other
-- If you need the MTL style NodeSequence use `Smarties.Trans`, otherwise stick with `Smarties` for better performance
-
 - Smarties gives access to the (rather simple) behavior tree control methods in `Smarties.Nodes`. Most of its power comes from the flexibility of monadic syntax. In some cases, it may be better to use something like **StateT (p,g) Writer [o]**. Sequence and selectors are still possible with monadic operations like [`ifM`](https://hackage.haskell.org/package/extra-1.7.1/docs/Control-Monad-Extra.html).
 
 ## Additional Features: <a id="missing"></a>
@@ -55,8 +53,4 @@ Some ideas for features to add to this package. I'll probably never get to these
 
 - Built in support for [Statistic.Distribution.Normal](https://hackage.haskell.org/package/statistics-0.14.0.2/docs/Statistics-Distribution-Normal.html) for modeling risk reward. This includes [basic](https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables) [operations](https://ccrma.stanford.edu/~jos/sasp/Product_Two_Gaussian_PDFs.html) on distributions.
 
-- It is possible to modify **perception** during tree execution. This is only recommended in the special case where the input state is same as what the tree is operating on as a whole in which case the tree represents a sequential set of operations on a value. e.g. **NodeSequnce g Int (Int->Int)** represents operations on an Int value. In these cases, ensure the **Reduceable p o** constraint is satisfied and use **SelfAction** which is the same as **Action** except also applies the output to the perception. The current implementation is a little too idiosynchratic and not well documented. This feature may be removed all together. In this case **perception** will be changed to immutable, i.e. p removed from the RHS of `runNodes`
-```
-data NodeSequenceT g p o m a =  NodeSequence { runNodes :: g -> p -> (a, g, Status, [o]) }
-```
-This is a working feature but I mention it in this section to indicate it is subject to change.
+- It is possible to modify **perception** during tree execution. This is only recommended in the special case where the input state is same as what the tree is operating on as a whole in which case the tree represents a sequential set of operations on a value. e.g. **NodeSequnce g Int (Int->Int)** represents operations on an Int value. In these cases, ensure the **SelfActionable p o** constraint is satisfied and use **SelfAction** which is the same as **Action** except also applies the output to the perception. The current implementation is a little idiosyncratic and I may remove in the future so it's metioned here for now.

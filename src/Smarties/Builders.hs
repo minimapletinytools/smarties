@@ -83,13 +83,13 @@ data ConditionT g p m where
 
 -- | same as Action except output is applied to perception
 data SelfAction g p o where
-    SelfAction :: (Reduceable p o) => (g -> p -> (g, o)) -> SelfAction g p o
-    SimpleSelfAction :: (Reduceable p o) => (p -> o) -> SelfAction g p o
+    SelfAction :: (SelfActionable p o) => (g -> p -> (g, o)) -> SelfAction g p o
+    SimpleSelfAction :: (SelfActionable p o) => (p -> o) -> SelfAction g p o
 
 -- | same as Action except output is applied to perception
 data SelfActionT g p o m where
-    SelfActionT :: (Reduceable p o) => (g -> p -> m (g, o)) -> SelfActionT g p o m
-    SimpleSelfActionT :: (Reduceable p o) => (p -> m o) -> SelfActionT g p o m
+    SelfActionT :: (SelfActionable p o) => (g -> p -> m (g, o)) -> SelfActionT g p o m
+    SimpleSelfActionT :: (SelfActionable p o) => (p -> m o) -> SelfActionT g p o m
 
 -- | convert UtilityT to NodeSequenceT
 fromUtilityT :: (Monad m) => UtilityT g p m a -> NodeSequenceT g p o m a
@@ -174,7 +174,7 @@ fromSelfActionT n = NodeSequenceT $ case n of
     where
         func f g p = do
             (g', o) <- f g p
-            return ((), g', reduce [o] p, SUCCESS, [o])
+            return ((), g', apply o p, SUCCESS, [o])
 
 
 
