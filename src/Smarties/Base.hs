@@ -178,9 +178,8 @@ instance MonadTrans (NodeSequenceT g p o) where
   lift m = NodeSequenceT (\g p -> m >>= (\a -> return (a, g, p, SUCCESS,[])))
 
 instance (RandomGen g, Monad m) => MonadRandom (NodeSequenceT g p o m) where
-  -- TODO
-  getRandoms = undefined
-  getRandomRs _ = undefined
+  getRandoms = forM [0..] (const getRandom)
+  getRandomRs r = forM [0..] (const $ getRandomR r)
   getRandom = do
     g <- getGenerator
     let

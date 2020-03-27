@@ -71,7 +71,6 @@ selector ns = NodeSequenceT func where
     return $ fromMaybe (error "selector: all children failed",g',p,FAIL,[]) $
       find (\(_,_,_,x,_)-> x == SUCCESS) rslts
 
-
 -- |
 weightedSelection :: (RandomGen g, Ord w, Random w, Num w) => g -> [(w,a)] -> (Maybe a, g)
 weightedSelection g ns = if total /= 0 then r else weightedSelection g (zip ([0..]::[Int]) . map snd $ ns) where

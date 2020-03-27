@@ -7,7 +7,7 @@ Maintainer  : chippermonky@gmail.com
 Stability   : experimental
 
 Example simulating colony of slimes with feelings using smarties.
-Unfinished and unworking. You're welcome to fix it for me :).
+Unfinished, not working, and entirely unintuitive. You're welcome to fix it for me :).
 -}
 
 
