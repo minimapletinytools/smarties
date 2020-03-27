@@ -83,8 +83,14 @@ prop_utilitySelector w = r where
     then s == FAIL
     else rslt == fromMaybe (-1) (findIndex (maximum w ==) w)
 
--- prop_utilityWeightedSelector :: Bool
--- prop_utilityWeightedSelector = True
+test_utilityWeightedSelector :: Expectation
+test_utilityWeightedSelector = mostCommon as `shouldBe` cnt where
+  cnt = 10
+  geta (a,_,_,_,_) = a
+  tree = do
+    utilityWeightedSelector $ map (\n-> (setAction n >> return n)) [0..cnt]
+    getPerception
+  as = geta $ runNodeSequence (forM [0..1000] (\_ -> tree)) (mkStdGen 0) 0
 
 prop_addition :: Int -> (NonNegative Int) -> Bool
 prop_addition a (NonNegative b) = execNodeSequenceTimesFinalize b (addAction a) () 0 == a*b
@@ -109,3 +115,6 @@ spec = do
   describe "weightedSelector" $
     it "passes basic tests" $
       test_weightedSelector
+  describe "utilityWeightedSelector" $
+    it "passes basic tests" $
+      test_utilityWeightedSelector
