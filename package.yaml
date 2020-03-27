@@ -1,5 +1,5 @@
 name:                smarties
-version:             '1.2.0'
+version:             '1.2.1'
 github:              "pdlla/smarties"
 license:             BSD3
 author:              "pdlla"
@@ -12,7 +12,7 @@ extra-source-files:
 
 # Metadata used when publishing your package
 synopsis: Haskell Behavior Tree Library
-category: Games
+category: Games, AI
 description:         Please see the README on Github at <https://github.com/githubuser/smarties#readme>
 
 dependencies:
@@ -49,6 +49,9 @@ library:
   source-dirs: src
   exposed-modules:
     - Smarties
+    - Smarties.Base
+    - Smarties.Builders
+    - Smarties.Nodes
 
 executables:
   tutorial:
