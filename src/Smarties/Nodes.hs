@@ -81,7 +81,8 @@ weightedSelection g ns = if total /= 0 then r else weightedSelection g (zip ([0.
     Just (_,n) -> (Just n, g')
     Nothing    -> (Nothing, g')
 
--- |
+-- | makes a weighted random selection on a list of nodes and weights
+-- this only runs the selected NodeSequence
 weightedSelector :: (RandomGen g, Ord w, Num w, Random w, Monad m) => [(w, NodeSequenceT g p o m a)] -> NodeSequenceT g p o m a
 weightedSelector ns = NodeSequenceT func where
   func g p = (runNodes selectedNode) g' p where
@@ -96,7 +97,6 @@ type family NotUnit a where
 
 -- | returns the node sequence with maximum utility
 -- N.B. that this will dry execute ALL node sequences in the input list so be mindful of performance
--- However any side effects will not be reverted either so avoid Nodes with mutable writes inside of utilitySelector!!!
 utilitySelector :: (Ord a, NotUnit a ~ 'True, Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
 utilitySelector ns = NodeSequenceT func where
   func g p = do
@@ -106,7 +106,8 @@ utilitySelector ns = NodeSequenceT func where
       then return (error "utilitySelector: no children",g',p,FAIL,[])
       else return $ maximumBy (comparing compfn) rslts
 
--- |
+-- | makes a weighted random selection on a list of nodes with weights calculated using their monadic return value
+-- N.B.  that this will dry execute ALL node sequences in the input list so be mindful of performance
 utilityWeightedSelector :: (RandomGen g, Random a, Num a, Ord a, NotUnit a ~ 'True, Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
 utilityWeightedSelector ns = NodeSequenceT func where
   func g p = do

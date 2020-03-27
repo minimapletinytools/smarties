@@ -12,10 +12,12 @@ import           Prelude                hiding (sequence)
 import           Test.Hspec
 import           Test.QuickCheck
 
-import           Control.Monad          (forM_, liftM, liftM2, replicateM)
+import           Control.Monad
 import           Control.Monad.Identity (runIdentity)
-import           Data.List              (findIndex, maximum)
+import           Data.Function
+import           Data.List
 import           Data.Maybe             (fromMaybe)
+import           System.Random
 
 import           Smarties
 
@@ -45,9 +47,13 @@ type GeneratorType = ()
 type PerceptionType = Int
 type OutputType = Int -> Int
 
--- | adds an action that increases state by 1 (used for tracking which node was executed)
+-- | action that increases perception by n (used for tracking which node was executed)
 addAction :: Int -> NodeSequence GeneratorType PerceptionType OutputType ()
 addAction n = fromAction $ SimpleAction (\_ -> (+n))
+
+-- | adds an action that sets perception to n (used for tracking which node was executed)
+setAction :: Int -> NodeSequence g PerceptionType OutputType ()
+setAction n = fromPerception $ SimplePerception (const n)
 
 prop_selector_basic :: Bool -> Bool
 prop_selector_basic b = let
@@ -55,8 +61,18 @@ prop_selector_basic b = let
   (_,_,_,s,_) = runIdentity $ (runNodes tree) () ()
   in if b then s == SUCCESS else s == FAIL
 
--- prop_weightedSelector :: Bool
--- prop_weightedSelector = True
+
+mostCommon :: Ord a => [a] -> a
+mostCommon = head . maximumBy (compare `on` length) . group . sort
+
+test_weightedSelector :: Expectation
+test_weightedSelector = mostCommon as `shouldBe` cnt where
+  cnt = 10
+  geta (a,_,_,_,_) = a
+  tree = do
+    weightedSelector $ map (\n-> (n, setAction n)) [0..cnt]
+    getPerception
+  as = geta $ runIdentity $ runNodes (forM [0..1000] (\_ -> tree)) (mkStdGen 0) 0
 
 prop_utilitySelector :: [Int] -> Bool
 prop_utilitySelector w = r where
@@ -88,4 +104,8 @@ return []
 props = $allProperties
 
 -- hspec nonsense
-spec = forM_ props (\(s,p) -> it s $ property $ p)
+spec = do
+  forM_ props (\(s,p) -> it s $ property $ p)
+  describe "weightedSelector" $
+    it "passes basic tests" $
+      test_weightedSelector

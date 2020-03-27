@@ -165,14 +165,13 @@ instance (Monad m) => Monad (NodeSequenceT g p o m) where
         -- perception is input perception
         -- output is empty
         -- rng is accumulated rng from next monad
-        -- return monadic return value by dry executing the next monad (passing through updated perception and )
+        -- return monadic return value by dry executing the next monad (passing through updated perception and tossing results)
+        -- N.B. if your internal monad encodes side effects, they will not be reverted!
        then return (b, g'', p, FAIL, [])
        else return keepGoing where
 
-
 instance MonadTrans (NodeSequenceT g p o) where
   lift m = NodeSequenceT (\g p -> m >>= (\a -> return (a, g, p, SUCCESS,[])))
-
 
 instance (RandomGen g, Monad m) => MonadRandom (NodeSequenceT g p o m) where
   -- TODO
