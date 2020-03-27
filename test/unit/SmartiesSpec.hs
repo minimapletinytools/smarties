@@ -88,7 +88,7 @@ test_utilityWeightedSelector = mostCommon as `shouldBe` cnt where
   cnt = 10
   geta (a,_,_,_,_) = a
   tree = do
-    utilityWeightedSelector $ map (\n-> (setAction n >> return n)) [0..cnt]
+    _ <- utilityWeightedSelector $ map (\n-> (setAction n >> return n)) [0..cnt]
     getPerception
   as = geta $ runNodeSequence (forM [0..1000] (\_ -> tree)) (mkStdGen 0) 0
 
@@ -104,17 +104,22 @@ prop_addition_sequence a (NonNegative b) = (reduce os p == a*b) && s == FAIL whe
     result FAIL
     forM_ [0..100] (\_->addAction a)
 
-
--- Template haskell nonsense to run all properties prefixed with "prop_" in this file
-return []
-props = $allProperties
-
 -- hspec nonsense
 spec = do
-  forM_ props (\(s,p) -> it s $ property $ p)
+  describe "selector" $
+    it "satisfies basic property test" $
+      property prop_selector_basic
+  describe "utilitySelector" $
+    it "satisfies basic property test" $
+      property prop_utilitySelector
   describe "weightedSelector" $
     it "passes basic tests" $
       test_weightedSelector
   describe "utilityWeightedSelector" $
     it "passes basic tests" $
       test_utilityWeightedSelector
+  describe "other" $ do
+    it "passes addition property test" $
+      property prop_addition
+    it "passes addition in sequence property test" $
+      property prop_addition_sequence
