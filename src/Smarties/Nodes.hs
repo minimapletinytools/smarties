@@ -58,7 +58,7 @@ mapAccumRM f acc_ xs = foldr mapAccumM_ (return (acc_, [])) xs where
 -- TODO rename this function
 mapAccumNodeSequenceT :: (Monad m) => p -> g -> NodeSequenceT g p o m a -> m (g, (a, g, p, Status, [o]))
 mapAccumNodeSequenceT p acc x = do
-  r <- (runNodes x) acc p
+  r <- (runNodeSequenceT x) acc p
   let (_,acc',_,_,_) = r
   return (acc', r)
 
@@ -85,7 +85,7 @@ weightedSelection g ns = if total /= 0 then r else weightedSelection g (zip ([0.
 -- this only runs the selected NodeSequence
 weightedSelector :: (RandomGen g, Ord w, Num w, Random w, Monad m) => [(w, NodeSequenceT g p o m a)] -> NodeSequenceT g p o m a
 weightedSelector ns = NodeSequenceT func where
-  func g p = (runNodes selectedNode) g' p where
+  func g p = (runNodeSequenceT selectedNode) g' p where
     (msn, g') = weightedSelection g ns
     selectedNode = fromMaybe empty msn
 
@@ -127,7 +127,7 @@ flipResult :: (Monad m) => NodeSequenceT g p o m a -> NodeSequenceT g p o m a
 flipResult n = NodeSequenceT func where
     flipr s = if s == SUCCESS then FAIL else SUCCESS
     func g p = do
-      rslt <- runNodes n g p
+      rslt <- runNodeSequenceT n g p
       return $ over _4 flipr rslt
 
 -- this is fine and all except if this occurs after a FAILed NodeSequence it will still output so make sure you clearly document that this is the case and why

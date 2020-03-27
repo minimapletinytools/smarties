@@ -58,7 +58,7 @@ setAction n = fromPerception $ SimplePerception (const n)
 prop_selector_basic :: Bool -> Bool
 prop_selector_basic b = let
   tree = selector [result FAIL, result FAIL, result FAIL, result FAIL, result FAIL, result FAIL, result FAIL, result (if b then SUCCESS else FAIL)]
-  (_,_,_,s,_) = runIdentity $ (runNodes tree) () ()
+  (_,_,_,s,_) = runIdentity $ (runNodeSequenceT tree) () ()
   in if b then s == SUCCESS else s == FAIL
 
 
@@ -72,7 +72,7 @@ test_weightedSelector = mostCommon as `shouldBe` cnt where
   tree = do
     weightedSelector $ map (\n-> (n, setAction n)) [0..cnt]
     getPerception
-  as = geta $ runIdentity $ runNodes (forM [0..1000] (\_ -> tree)) (mkStdGen 0) 0
+  as = geta $ runNodeSequence (forM [0..1000] (\_ -> tree)) (mkStdGen 0) 0
 
 prop_utilitySelector :: [Int] -> Bool
 prop_utilitySelector w = r where

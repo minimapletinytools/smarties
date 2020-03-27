@@ -19,7 +19,7 @@ To jump right in, please see the this tutorial example implementing [Conway's Ga
 **NodeSequence** has the following definition
 
 ```haskell
-data NodeSequenceT g p o m a =  NodeSequence { runNodes :: g -> p -> (a, g, p, Status, [o]) }
+data NodeSequenceT g p o m a =  NodeSequence { runNodeSequenceT :: g -> p -> (a, g, p, Status, [o]) }
 ```
 
 The sequence represents a computation that takes a generator and perception and returns an output with the following types:

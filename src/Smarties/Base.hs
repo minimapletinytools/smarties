@@ -16,6 +16,7 @@ module Smarties.Base (
   execNodeSequenceTimesT,
   execNodeSequenceTimesFinalizeT,
   NodeSequence,
+  runNodeSequence,
   execNodeSequence,
   execNodeSequenceTimes,
   execNodeSequenceTimesFinalize,
@@ -51,13 +52,12 @@ reduce os p = foldr apply p os
 
 data Status = SUCCESS | FAIL deriving (Eq, Show)
 
--- TODO rename runNodes to runNodeSequenceT
-newtype NodeSequenceT g p o m a =  NodeSequenceT { runNodes :: g -> p -> m (a, g, p, Status, [o]) }
+newtype NodeSequenceT g p o m a =  NodeSequenceT { runNodeSequenceT :: g -> p -> m (a, g, p, Status, [o]) }
 
 -- | run a node sequence tossing its monadic output
 -- output is ordered from RIGHT to LEFT i.e. foldr when applying
 execNodeSequenceT :: (Monad m) => NodeSequenceT g p o m a -> g -> p -> m (g, p, Status, [o])
-execNodeSequenceT n g p = (runNodes n) g p >>= (\(_,g',p',s,os) -> return (g',p',s,os))
+execNodeSequenceT n g p = (runNodeSequenceT n) g p >>= (\(_,g',p',s,os) -> return (g',p',s,os))
 
 -- | internal helper
 iterate_ :: (Monad m) => Int -> (a -> m a) -> a -> m a
@@ -68,7 +68,7 @@ execNodeSequenceTimesT :: (SelfActionable p o, Monad m) => Int -> NodeSequenceT 
 execNodeSequenceTimesT num n _g _p = iterate_ num itfun (_g, _p, SUCCESS, []) where
   itfun (g,p,_,os) = execNodeSequenceT n g (reduce os p)
 
--- | same as runNodeSequenceTimes except reduces the final input with its output and only returns this result
+-- | same as runNodeSequenceTequenceTimes except reduces the final input with its output and only returns this result
 execNodeSequenceTimesFinalizeT :: (SelfActionable p o, Monad m) => Int -> NodeSequenceT g p o m a -> g -> p -> m p
 execNodeSequenceTimesFinalizeT num n _g _p = do
   (_,p,_,os) <- execNodeSequenceTimesT num n _g _p
@@ -78,6 +78,10 @@ execNodeSequenceTimesFinalizeT num n _g _p = do
 
 -- | has the exact same interface as the one in Smarties.Base
 type NodeSequence g p o a = NodeSequenceT g p o Identity a
+
+-- |
+runNodeSequence :: NodeSequence g p o a -> g -> p -> (a, g, p, Status, [o])
+runNodeSequence n g p = runIdentity $ runNodeSequenceT n g p
 
 -- |
 execNodeSequence :: NodeSequence g p o a -> g -> p -> (g, p, Status, [o])
@@ -126,7 +130,7 @@ instance (Functor m, Monad m) => Functor (NodeSequenceT g p o m) where
     a <- n
     return $ f a
   --fmap f n = NodeSequenceT func where
-  --    func g_ p_ = fmap f' ((runNodes n) g_ p_) where
+  --    func g_ p_ = fmap f' ((runNodeSequenceT n) g_ p_) where
   --        f' (a, g, p, s, os) = (f a, g, p, s, os)
 
 
