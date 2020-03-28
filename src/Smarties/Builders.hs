@@ -36,7 +36,7 @@ import           Smarties.Base
 
 
 -- $helper1link
--- helpers for building NodeSequenceT out of functions
+-- Methods for building nodes out of functions.
 
 -- | Utility nodes produce a monadic return value and always have state SUCCESS
 data Utility g p a where

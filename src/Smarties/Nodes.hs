@@ -52,7 +52,7 @@ mapAccumRM f acc_ xs = foldr mapAccumM_ (return (acc_, [])) xs where
     (acc', y) <- f acc x
     return (acc', ys ++ [y])
 
--- run a node sequence and return its accumulated generator
+-- runs a node sequence and returns its accumulated generator
 -- this is used to mapAccumR over [NodeSequenceT] passing generator through
 -- TODO rename this function
 mapAccumNodeSequenceT :: (Monad m) => p -> g -> NodeSequenceT g p o m a -> m (g, (a, g, p, Status, [o]))
@@ -118,9 +118,9 @@ utilityWeightedSelector ns = NodeSequenceT func where
         return $ set _2 g'' n
 
 -- $decoratorlink
--- decorators run a nodesequence and do something with it's results
+-- decorators run a nodesequence and do something with its results
 
--- | flips the status of a node
+-- | flips the status of a node (FAIL <-> SUCCESS)
 flipResult :: (Monad m) => NodeSequenceT g p o m a -> NodeSequenceT g p o m a
 flipResult n = NodeSequenceT func where
     flipr s = if s == SUCCESS then FAIL else SUCCESS
