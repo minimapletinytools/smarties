@@ -38,55 +38,55 @@ import           Smarties.Base
 -- $helper1link
 -- helpers for building NodeSequenceT out of functions
 
--- | Utility return utility only
+-- | Utility nodes produce a monadic return value and always have state SUCCESS
 data Utility g p a where
   Utility :: (g -> p -> (a, g)) -> Utility g p a
   SimpleUtility :: (p -> a) -> Utility g p a
 
--- | Transformer variant
+-- | transformer variant
 data UtilityT g p m a where
   UtilityT :: (Monad m) => (g -> p -> m (a, g)) -> UtilityT g p m a
   SimpleUtilityT :: (Monad m) => (p -> m a) -> UtilityT g p m a
 
--- | Perception modify perception only
+-- | Perception nodes modify the perception
 data Perception g p where
   Perception :: (g -> p -> (g, p)) -> Perception g p
   SimplePerception :: (p -> p) -> Perception g p
   -- TODO delete this, just use Perception + Conditional, no need to combine them
   ConditionalPerception :: (g -> p -> (Bool, g, p)) -> Perception g p
 
--- | Transformer variant
+-- | transformer variant
 data PerceptionT g p m where
   PerceptionT :: (g -> p -> m (g, p)) -> PerceptionT g p m
   SimplePerceptionT :: (p -> m p) -> PerceptionT g p m
   ConditionalPerceptionT :: (g -> p -> m (Bool, g, p)) -> PerceptionT g p m
 
--- | Actions create output and always have status SUCCESS
+-- | Action nodes add to the output and always have status SUCCESS
 data Action g p o where
   Action :: (g -> p -> (g, o)) -> Action g p o
   SimpleAction :: (p -> o) -> Action g p o
 
--- | Transformer variant
+-- | transformer variant
 data ActionT g p o m where
   ActionT :: (g -> p -> m (g, o)) -> ActionT g p o m
   SimpleActionT :: (p -> m o) -> ActionT g p o m
 
--- | Conditions have status SUCCESS if they return true FAIL otherwise
+-- | Condition nodes have status SUCCESS if they return true and FAIL otherwise
 data Condition g p where
   Condition :: (g -> p -> (Bool, g)) -> Condition g p
   SimpleCondition :: (p -> Bool) -> Condition g p
 
--- | Transformer variant
+-- | transformer variant
 data ConditionT g p m where
   ConditionT :: (g -> p -> m (Bool, g)) -> ConditionT g p m
   SimpleConditionT :: (p -> m Bool) -> ConditionT g p m
 
--- | same as Action except output is applied to perception
+-- | SelfAction nodes are Action nodes that also apply the action to the perception
 data SelfAction g p o where
   SelfAction :: (SelfActionable p o) => (g -> p -> (g, o)) -> SelfAction g p o
   SimpleSelfAction :: (SelfActionable p o) => (p -> o) -> SelfAction g p o
 
--- | same as Action except output is applied to perception
+-- | transformer variant
 data SelfActionT g p o m where
   SelfActionT :: (SelfActionable p o) => (g -> p -> m (g, o)) -> SelfActionT g p o m
   SimpleSelfActionT :: (SelfActionable p o) => (p -> m o) -> SelfActionT g p o m
@@ -101,8 +101,7 @@ fromUtilityT n = NodeSequenceT $ case n of
       (a, g') <- f g p
       return (a, g', p, SUCCESS, [])
 
--- |
--- these methods convert to transformer variant
+-- | convert Utility to NodeSequence
 fromUtility :: (Monad m) => Utility g p a -> NodeSequenceT g p o m a
 fromUtility n = case n of
   Utility f       -> fromUtilityT $ UtilityT (\g p -> return $ f g p)
@@ -122,8 +121,7 @@ fromPerceptionT n = NodeSequenceT $ case n of
       (b, g', p') <- f g p
       return ((), g', p', if b then SUCCESS else FAIL, [])
 
--- |
--- these methods convert to transformer variant
+-- | converts Perception to NodeSequence
 fromPerception :: (Monad m) => Perception g p -> NodeSequenceT g p o m ()
 fromPerception n = case n of
   Perception f -> fromPerceptionT $ PerceptionT (\g p -> return $ f g p)
@@ -140,8 +138,7 @@ fromConditionT n = NodeSequenceT $ case n of
       (b, g') <- f g p
       return ((), g', p, if b then SUCCESS else FAIL, [])
 
--- |
--- these methods convert to transformer variant
+-- | converts Condition to NodeSequence
 fromCondition :: (Monad m) => Condition g p -> NodeSequenceT g p o m ()
 fromCondition n = case n of
   Condition f       -> fromConditionT $ ConditionT (\g p -> return $ f g p)
@@ -157,8 +154,7 @@ fromActionT n = NodeSequenceT $ case n of
       (g', o) <- f g p
       return ((), g', p, SUCCESS, [o])
 
--- |
--- these methods convert to transformer variant
+-- | converts Action to NodeSequence
 fromAction :: (Monad m) => Action g p o -> NodeSequenceT g p o m ()
 fromAction n = case n of
   Action f       -> fromActionT $ ActionT (\g p -> return $ f g p)
@@ -168,7 +164,7 @@ fromAction n = case n of
 
 
 -- | converts SelftActionT to NodeSequenceT
--- WARNING: MAY BE REMOVED IN A FUTURE RELEASE
+-- WARNING: may be deprecated in a future release
 fromSelfActionT :: (Monad m) => SelfActionT g p o m -> NodeSequenceT g p o m ()
 fromSelfActionT n = NodeSequenceT $ case n of
   SelfActionT f       -> func f
@@ -178,9 +174,8 @@ fromSelfActionT n = NodeSequenceT $ case n of
       (g', o) <- f g p
       return ((), g', apply o p, SUCCESS, [o])
 
--- |
--- these methods convert to transformer variant
--- WARNING: MAY BE REMOVED IN A FUTURE RELEASE
+-- | converts SelftAction to NodeSequence
+-- WARNING: may be deprecated in a future release
 fromSelfAction :: (Monad m) => SelfAction g p o -> NodeSequenceT g p o m ()
 fromSelfAction n = case n of
   SelfAction f -> fromSelfActionT $ SelfActionT (\g p -> return $ f g p)

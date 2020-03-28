@@ -38,7 +38,6 @@ import           Data.Ord                        (comparing)
 
 
 -- $controllink
--- control nodes
 
 -- | intended use is "sequence $ do"
 -- This is prefered over just "do" as it's more explicit.
@@ -63,7 +62,7 @@ mapAccumNodeSequenceT p acc x = do
   return (acc', r)
 
 
--- you can think of selector as something along the lines of (dropWhile SUCCESS . take 1)
+-- | dry run nodes in the input list until one has status SUCCESS and returns that node
 selector :: (Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
 selector ns = NodeSequenceT func where
   func g p = do
@@ -81,7 +80,7 @@ weightedSelection g ns = if total /= 0 then r else weightedSelection g (zip ([0.
     Nothing    -> (Nothing, g')
 
 -- | makes a weighted random selection on a list of nodes and weights
--- this only runs the selected NodeSequence
+-- this only runs the selected node
 weightedSelector :: (RandomGen g, Ord w, Num w, Random w, Monad m) => [(w, NodeSequenceT g p o m a)] -> NodeSequenceT g p o m a
 weightedSelector ns = NodeSequenceT func where
   func g p = (runNodeSequenceT selectedNode) g' p where
@@ -95,7 +94,7 @@ type family NotUnit a where
   NotUnit a = 'True
 
 -- | returns the node sequence with maximum utility
--- N.B. that this will dry execute ALL node sequences in the input list so be mindful of performance
+-- this will dry execute ALL nodes in the input list
 utilitySelector :: (Ord a, NotUnit a ~ 'True, Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
 utilitySelector ns = NodeSequenceT func where
   func g p = do
@@ -106,7 +105,7 @@ utilitySelector ns = NodeSequenceT func where
       else return $ maximumBy (comparing compfn) rslts
 
 -- | makes a weighted random selection on a list of nodes with weights calculated using their monadic return value
--- N.B.  that this will dry execute ALL node sequences in the input list so be mindful of performance
+-- this will dry execute ALL nodes in the input list
 utilityWeightedSelector :: (RandomGen g, Random a, Num a, Ord a, NotUnit a ~ 'True, Monad m) => [NodeSequenceT g p o m a] -> NodeSequenceT g p o m a
 utilityWeightedSelector ns = NodeSequenceT func where
   func g p = do
@@ -121,7 +120,7 @@ utilityWeightedSelector ns = NodeSequenceT func where
 -- $decoratorlink
 -- decorators run a nodesequence and do something with it's results
 
--- | decorator that flips the status (FAIL -> SUCCESS, SUCCES -> FAIL)
+-- | flips the status of a node
 flipResult :: (Monad m) => NodeSequenceT g p o m a -> NodeSequenceT g p o m a
 flipResult n = NodeSequenceT func where
     flipr s = if s == SUCCESS then FAIL else SUCCESS
@@ -134,16 +133,16 @@ flipResult n = NodeSequenceT func where
 --traceNode msg = NodeSequenceT (\g p -> trace msg $ return ((), g, p, SUCCESS, []))
 
 -- $conditionlink
--- conditions
--- | has given status
+-- | creates a node that has the input status
 result :: (Monad m) => Status -> NodeSequenceT g p o m ()
 result s = NodeSequenceT (\g p -> return ((), g, p, s, []))
 
--- | create a condition node, SUCCESS if true FAIL otherwise
+-- | creates a condition node
+-- SUCCESS if input is true FAIL otherwise
 condition :: (Monad m) => Bool -> NodeSequenceT g p o m ()
 condition s = NodeSequenceT (\g p -> return ((), g, p, if s then SUCCESS else FAIL, []))
 
--- | create a node with random status based on input chance
+-- | creates a node with random status based on input chance
 rand :: (RandomGen g, Monad m) => Float -- ^ chance of success ∈ [0,1]
   -> NodeSequenceT g p o m ()
 rand rn = do

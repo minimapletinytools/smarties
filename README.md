@@ -60,7 +60,7 @@ To keep the syntax simple in most cases, there are non-transformer variants of e
 ## Other
 - Smarties gives access to the (rather simple) BT control methods in `Smarties.Nodes`. Most of its power comes from the flexibility of monadic syntax. In some cases, it may be better/simpler to use something like **StateT (p,g) Writer [o]**. Sequence and selectors are still possible with monadic operations like [`ifM`](https://hackage.haskell.org/package/extra-1.7.1/docs/Control-Monad-Extra.html).
 
-## Additional Features: <a id="missing"></a>
+## Additional Features:
 Some ideas for features to add to this package. I'll probably never get to these but feel free to submit a PR.
 
 - Built in support for [Statistic.Distribution.Normal](https://hackage.haskell.org/package/statistics-0.14.0.2/docs/Statistics-Distribution-Normal.html) for modeling risk reward. This includes [basic](https://en.wikipedia.org/wiki/Sum_of_normally_distributed_random_variables) [operations](https://ccrma.stanford.edu/~jos/sasp/Product_Two_Gaussian_PDFs.html) on distributions.

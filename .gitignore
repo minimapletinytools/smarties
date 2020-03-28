@@ -2,6 +2,7 @@
 smarties.cabal
 cabal.project.local
 dist-newstyle
+dist-docs.*
 *~
 *.prof
 .DS_Store
